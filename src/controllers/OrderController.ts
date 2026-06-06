@@ -145,7 +145,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Orders fetched")
-    .payload(localize(orders.map((o) => o.toObject()), req.lang))
+    .payload(localize(orders.map((o) => o.toJSON()), req.lang))
     .send(res);
 };
 
@@ -163,7 +163,7 @@ export const getOrderById = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Order fetched")
-    .payload(localize(order.toObject(), req.lang))
+    .payload(localize(order.toJSON(), req.lang))
     .send(res);
 };
 
@@ -206,7 +206,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Order cancelled")
-    .payload(localize(order.toObject(), req.lang))
+    .payload(localize(order.toJSON(), req.lang))
     .send(res);
 };
 
@@ -219,7 +219,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Orders fetched")
-    .payload(localize(orders.map((o) => o.toObject()), req.lang))
+    .payload(localize(orders.map((o) => o.toJSON()), req.lang))
     .send(res);
 };
 
@@ -285,6 +285,6 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Order status updated")
-    .payload(localize(order.toObject(), req.lang))
+    .payload(localize(order.toJSON(), req.lang))
     .send(res);
 };

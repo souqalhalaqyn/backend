@@ -17,7 +17,7 @@ export const getAll = async (req: Request, res: Response) => {
   ]);
 
   const data = products.map((p) => {
-    const obj = p.toObject();
+    const obj = p.toJSON();
     return {
       ...obj,
       priceSY: settings?.sypExchangeRate
@@ -45,7 +45,7 @@ export const getById = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("product fetched")
-    .payload(localize(product.toObject(), req.lang))
+    .payload(localize(product.toJSON(), req.lang))
     .send(res);
 };
 

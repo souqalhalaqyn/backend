@@ -9,7 +9,7 @@ export const getAll = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("brands fetched")
-    .payload(localize(brands.map((b) => b.toObject()), req.lang))
+    .payload(localize(brands.map((b) => b.toJSON()), req.lang))
     .send(res);
 };
 
@@ -19,7 +19,7 @@ export const getById = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("brand fetched")
-    .payload(localize(brand.toObject(), req.lang))
+    .payload(localize(brand.toJSON(), req.lang))
     .send(res);
 };
 

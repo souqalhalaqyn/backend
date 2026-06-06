@@ -34,7 +34,7 @@ export const getAll = async (req: Request, res: Response) => {
         .lean()
         .sort({ createdAt: -1 });
       return {
-        ...cat.toObject(),
+        ...cat.toJSON(),
         containers: await attachFirstProduct(containers),
       };
     }),
@@ -58,7 +58,7 @@ export const getById = async (req: Request, res: Response) => {
     .sort({ createdAt: -1 });
 
   const data = {
-    ...category.toObject(),
+    ...category.toJSON(),
     containers: await attachFirstProduct(containers),
   };
 
