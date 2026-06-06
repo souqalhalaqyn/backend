@@ -62,12 +62,12 @@ function localizeDoc(doc: Record<string, unknown>, lang: "en" | "ar"): Record<st
       continue;
     }
 
-    // Recurse into plain objects and arrays of objects
-    if (value && typeof value === "object" && !Array.isArray(value)) {
+    // Recurse into plain objects (not ObjectId, Date, Buffer, etc.) and arrays of objects
+    if (value && typeof value === "object" && !Array.isArray(value) && value.constructor === Object) {
       result[key] = localizeDoc(value as Record<string, unknown>, lang);
     } else if (Array.isArray(value)) {
       result[key] = value.map((item) =>
-        item && typeof item === "object" && !Buffer.isBuffer(item)
+        item && typeof item === "object" && !Array.isArray(item) && item.constructor === Object
           ? localizeDoc(item as Record<string, unknown>, lang)
           : item,
       );
