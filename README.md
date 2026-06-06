@@ -1,2 +1,0 @@
-# meet
-google-meet clone

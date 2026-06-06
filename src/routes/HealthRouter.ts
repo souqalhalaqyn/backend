@@ -5,8 +5,8 @@ const router = Router();
 
 router.get("/", (_req, res) => {
   return responder()
-    .mess("API is healthy")
-    .payload({ service: "meet-clone-api" })
+    .message("API is healthy")
+    .payload({ service: "barbers-api" })
     .send(res);
 });
 

@@ -3,8 +3,9 @@ import type { AppError } from "../errors/AppError.js";
 
 class ResponseTemplate {
   status: number | undefined;
-  message: string | undefined;
+  mess: string | undefined;
   data: any;
+  metaData: any;
 
   error: AppError | undefined;
 
@@ -15,7 +16,8 @@ class ResponseTemplate {
       return res.status(this.status ?? 500).json({
         success: false,
         status: this.status ?? 500,
-        message: this.message ?? "fail",
+        message: this.mess ?? "fail",
+        meta: this.metaData,
         data: this.data,
       });
     }
@@ -23,7 +25,8 @@ class ResponseTemplate {
     return res.status(this.status ?? 200).json({
       success: true,
       status: this.status ?? 200,
-      message: this.message ?? "success",
+      message: this.mess ?? "success",
+      meta: this.metaData,
       data: this.data,
     });
   }
@@ -31,7 +34,7 @@ class ResponseTemplate {
   err(err: AppError): ResponseTemplate {
     this.error = err;
     this.status = err.status;
-    this.message = err.message;
+    this.mess = err.message;
     return this;
   }
 
@@ -40,13 +43,18 @@ class ResponseTemplate {
     return this;
   }
 
-  mess(mess: string): ResponseTemplate {
-    this.message = mess;
+  message(mess: string): ResponseTemplate {
+    this.mess = mess;
     return this;
   }
 
   payload(payload: any): ResponseTemplate {
     this.data = payload;
+    return this;
+  }
+
+  meta(meta: any): ResponseTemplate {
+    this.metaData = meta;
     return this;
   }
 }

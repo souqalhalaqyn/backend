@@ -1,19 +1,7 @@
 {
-  "name": "meet",
+  "name": "barbers-backend",
   "version": "1.0.0",
-  "description": "google-meet clone",
-  "keywords": [
-    "google-meet",
-    "clone"
-  ],
-  "homepage": "https://github.com/Rawad-AG/meet#readme",
-  "bugs": {
-    "url": "https://github.com/Rawad-AG/meet/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Rawad-AG/meet.git"
-  },
+  "description": "Barbershop e-commerce API",
   "license": "ISC",
   "author": "Rawad-AG",
   "type": "module",
@@ -24,14 +12,24 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.1",
     "morgan": "^1.10.1",
-    "socket.io": "^4.8.3"
+    "multer": "^2.1.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.3.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
