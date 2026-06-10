@@ -5,41 +5,64 @@ import Product from "../models/Product.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
 
+async function attachProducts(containers: any[]) {
+  const containerIds = containers.map((c) => c._id);
+  const products = await Product.find({ container: { $in: containerIds } })
+    .sort({ productIndex: 1 })
+    .lean();
+  const productMap: Record<string, any[]> = {};
+  for (const p of products) {
+    const cid = p.container.toString();
+    if (!productMap[cid]) productMap[cid] = [];
+    productMap[cid].push(p);
+  }
+  return containers.map((c) => ({
+    ...c,
+    products: productMap[c._id.toString()] ?? [],
+  }));
+}
+
 export const getAll = async (req: Request, res: Response) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
+  const filter = { isActive: true };
+
   const [containers, total] = await Promise.all([
-    Container.find()
+    Container.find(filter)
       .populate("brand", "nameEn nameAr")
       .populate("categories", "nameEn nameAr")
       .skip(skip)
       .limit(limit)
       .lean(),
-    Container.countDocuments(),
+    Container.countDocuments(filter),
   ]);
+
+  const data = await attachProducts(containers);
 
   return responder()
     .code(200)
     .message("containers fetched")
-    .payload(localize(containers, req.lang))
+    .payload(localize(data, req.lang))
     .meta({ page, limit, total, totalPages: Math.ceil(total / limit) })
     .send(res);
 };
 
 export const getById = async (req: Request, res: Response) => {
-  const container = await Container.findById(req.params.id)
+  const container = await Container.findOne({ _id: req.params.id, isActive: true })
     .populate("brand", "nameEn nameAr")
     .populate("categories", "nameEn nameAr")
     .lean();
 
   if (!container) throw new AppError("Container not found", 404);
 
+  const data = (await attachProducts([container]))[0];
+
   return responder()
     .code(200)
     .message("container fetched")
-    .payload(localize(container, req.lang))
+    .payload(localize(data, req.lang))
     .send(res);
 };
 

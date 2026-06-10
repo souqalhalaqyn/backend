@@ -17,6 +17,7 @@ import { responder } from "./utils/Responder.js";
 const app: Application = express();
 const httpServer = createServer(app);
 
+app.set("trust proxy", 1);
 app.use(helmet());
 app.use(cors());
 if (ENV.PROFILE === "dev") app.use(morgan("dev"));

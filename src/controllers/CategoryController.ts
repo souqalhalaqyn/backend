@@ -24,21 +24,42 @@ async function attachFirstProduct(containers: any[]) {
 }
 
 export const getAll = async (req: Request, res: Response) => {
-  const categories = await Category.find();
+  const categories = await Category.find().lean();
+  const categoryIds = categories.map((c) => c._id);
 
-  const data = await Promise.all(
-    categories.map(async (cat) => {
-      const containers = await Container.find({ categories: cat._id })
-        .populate("brand", "nameEn nameAr")
-        .limit(10)
-        .lean()
-        .sort({ createdAt: -1 });
-      return {
-        ...cat.toJSON(),
-        containers: await attachFirstProduct(containers),
-      };
-    }),
-  );
+  const allContainers = await Container.find({ categories: { $in: categoryIds } })
+    .populate("brand", "nameEn nameAr")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const containerByCategory: Record<string, any[]> = {};
+  for (const c of allContainers) {
+    for (const catId of (c.categories ?? [])) {
+      const key = catId.toString();
+      if (!containerByCategory[key]) containerByCategory[key] = [];
+      if (containerByCategory[key].length < 10) containerByCategory[key].push(c);
+    }
+  }
+
+  const allContainerIds = allContainers.map((c) => c._id);
+  const allProducts = await Product.find({ container: { $in: allContainerIds } })
+    .sort({ productIndex: 1 })
+    .lean();
+
+  const productMap: Record<string, any[]> = {};
+  for (const p of allProducts) {
+    const cid = p.container.toString();
+    if (!productMap[cid]) productMap[cid] = [];
+    productMap[cid].push(p);
+  }
+
+  const data = categories.map((cat) => {
+    const catContainers = (containerByCategory[cat._id.toString()] ?? []).map((c) => ({
+      ...c,
+      products: (productMap[c._id.toString()] ?? []).slice(0, 1),
+    }));
+    return { ...cat, containers: catContainers };
+  });
 
   return responder()
     .code(200)

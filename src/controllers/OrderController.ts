@@ -67,7 +67,7 @@ export const placeOrder = async (req: Request, res: Response) => {
     if (!container) throw new AppError(`Container not found: ${containerId}`, 400);
 
     const containerProducts = productsByContainer[containerId] ?? [];
-    const product = containerProducts[productIndex] as any;
+    const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
     if (!product) throw new AppError(`Product at index ${productIndex} not found`, 400);
     if (product.stock < quantity) {
       throw new AppError(`Insufficient stock for product`, 400);

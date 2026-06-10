@@ -35,5 +35,11 @@ const ContainerSchema = new Schema(
   { timestamps: true },
 );
 
+ContainerSchema.index({ isActive: 1 });
+ContainerSchema.index(
+  { nameEn: "text", nameAr: "text", shortDescriptionEn: "text", shortDescriptionAr: "text", longDescriptionEn: "text", longDescriptionAr: "text" },
+  { name: "Container_text_index" },
+);
+
 const Container = mongoose.model("Container", ContainerSchema);
 export default Container;

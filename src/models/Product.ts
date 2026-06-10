@@ -102,5 +102,11 @@ ProductSchema.virtual("imageUrls").get(function () {
   );
 });
 
+ProductSchema.index({ container: 1, productIndex: 1 });
+ProductSchema.index(
+  { nameEn: "text", nameAr: "text", tagsEn: "text", tagsAr: "text", aliasesEn: "text", aliasesAr: "text" },
+  { name: "Product_text_index" },
+);
+
 const Product = mongoose.model("Product", ProductSchema);
 export default Product;

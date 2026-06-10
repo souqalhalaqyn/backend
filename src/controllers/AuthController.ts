@@ -45,7 +45,11 @@ export const signup = async (req: Request, res: Response) => {
   return responder()
     .code(201)
     .message("Account created successfully")
-    .payload({ accessToken, refreshToken, user })
+    .payload({
+      accessToken,
+      refreshToken,
+      user: { _id: user._id, phone: user.phone, role: user.role, name: user.name },
+    })
     .send(res);
 };
 
@@ -72,7 +76,11 @@ export const login = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Login successful")
-    .payload({ accessToken, refreshToken, user })
+    .payload({
+      accessToken,
+      refreshToken,
+      user: { _id: user._id, phone: user.phone, role: user.role, name: user.name },
+    })
     .send(res);
 };
 
