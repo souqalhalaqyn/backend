@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
 import Container from "../models/Container.js";
+import Offer from "../models/Offer.js";
+import OfferPurchase from "../models/OfferPurchase.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
@@ -132,8 +134,70 @@ export const placeOrder = async (req: Request, res: Response) => {
     ],
   });
 
+  // Distribute profit to offer buyers for each item
+  try {
+    await distributeOfferProfits(order, req.user.userId);
+  } catch {
+    // Non-critical: order succeeded, profit distribution can be reconciled manually
+  }
+
   return responder().code(201).message("Order placed").payload(order).send(res);
 };
+
+async function distributeOfferProfits(order: any, retailBuyerId: string) {
+  for (const item of order.items) {
+    const productId = item.product;
+    const quantity = item.quantity;
+
+    const offers = await Offer.find({
+      product: productId,
+      status: "sold",
+    }).sort({ createdAt: 1 });
+
+    let remainingQty = quantity;
+    for (const offer of offers) {
+      if (remainingQty <= 0) break;
+      const unsold = offer.totalQuantity - offer.soldQuantity;
+      if (unsold <= 0) continue;
+
+      const distributeQty = Math.min(remainingQty, unsold);
+      remainingQty -= distributeQty;
+
+      const commissionPerUnit = offer.unitSellPrice * (offer.commissionPercent / 100);
+      const buyerProfitPerUnit = offer.unitSellPrice - commissionPerUnit;
+      const totalBuyerProfit = buyerProfitPerUnit * distributeQty;
+      const totalCommission = commissionPerUnit * distributeQty;
+
+      const result = await Offer.updateOne(
+        { _id: offer._id, soldQuantity: { $lte: offer.totalQuantity - distributeQty } },
+        {
+          $inc: { soldQuantity: distributeQty, totalProfitDistributed: totalBuyerProfit },
+        },
+      );
+      if (result.modifiedCount !== 1) continue;
+
+      const updatedOffer = await Offer.findById(offer._id);
+      if (updatedOffer && updatedOffer.soldQuantity >= updatedOffer.totalQuantity) {
+        updatedOffer.status = "completed";
+        await updatedOffer.save();
+      }
+
+      await User.findByIdAndUpdate(offer.buyer, { $inc: { balance: totalBuyerProfit } });
+
+      await OfferPurchase.create({
+        offer: offer._id,
+        order: order._id,
+        retailBuyer: retailBuyerId,
+        quantity: distributeQty,
+        unitSellPrice: offer.unitSellPrice,
+        commissionPercent: offer.commissionPercent,
+        commissionAmount: totalCommission,
+        buyerProfit: buyerProfitPerUnit,
+        totalProfitAmount: totalBuyerProfit,
+      });
+    }
+  }
+}
 
 export const getMyOrders = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
