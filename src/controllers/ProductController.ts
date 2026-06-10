@@ -10,10 +10,15 @@ export const getAll = async (req: Request, res: Response) => {
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
+  const filter: Record<string, unknown> = {};
+  if (req.query.container) {
+    filter.container = req.query.container;
+  }
+
   const settings = await Settings.findOne();
   const [products, total] = await Promise.all([
-    Product.find().skip(skip).limit(limit).populate("container"),
-    Product.countDocuments(),
+    Product.find(filter).skip(skip).limit(limit).populate("container"),
+    Product.countDocuments(filter),
   ]);
 
   const data = products.map((p) => {
