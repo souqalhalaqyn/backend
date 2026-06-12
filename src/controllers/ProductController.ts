@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
+import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
@@ -10,8 +11,9 @@ export const getAll = async (req: Request, res: Response) => {
   const skip = (page - 1) * limit;
 
   const filter: Record<string, unknown> = {};
-  if (req.query.container) {
-    filter.container = req.query.container;
+  const containerParam = (req.query.container as string) || (req.query.contianerId as string);
+  if (containerParam && mongoose.Types.ObjectId.isValid(containerParam)) {
+    filter.container = new mongoose.Types.ObjectId(containerParam);
   }
 
   const [products, total] = await Promise.all([
