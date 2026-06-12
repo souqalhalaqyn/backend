@@ -1,5 +1,45 @@
 import type { Response } from "express";
 import type { AppError } from "../errors/AppError.js";
+import Settings from "../models/Settings.js";
+
+const PRICE_FIELDS = new Set([
+  "price", "total", "balance", "offerPrice", "unitSellPrice",
+  "totalProfitDistributed", "buyerProfit", "totalProfitAmount",
+  "amount", "commissionAmount",
+]);
+
+function addSypFields(obj: any, rate: number): any {
+  if (obj === null || obj === undefined) return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => addSypFields(item, rate));
+  }
+
+  if (typeof obj === "object") {
+    const result: Record<string, any> = Array.isArray(obj) ? [] : {};
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+
+      if (PRICE_FIELDS.has(key) && typeof val === "number") {
+        const sypKey = `${key}SY`;
+        if (obj[sypKey] === undefined) {
+          result[key] = val;
+          result[sypKey] = Math.round(val * rate);
+          continue;
+        }
+      }
+
+      if (typeof val === "object" && val !== null) {
+        result[key] = addSypFields(val, rate);
+      } else {
+        result[key] = val;
+      }
+    }
+    return result;
+  }
+
+  return obj;
+}
 
 class ResponseTemplate {
   status: number | undefined;
@@ -11,14 +51,18 @@ class ResponseTemplate {
 
   constructor() {}
 
-  send(res: Response) {
+  async send(res: Response) {
+    const settings = await Settings.findOne();
+    const rate = settings?.sypExchangeRate ?? 15000;
+    const convertedData = this.data !== undefined ? addSypFields(this.data, rate) : this.data;
+
     if (this.error) {
       return res.status(this.status ?? 500).json({
         success: false,
         status: this.status ?? 500,
         message: this.mess ?? "fail",
         meta: this.metaData,
-        data: this.data,
+        data: convertedData,
       });
     }
 
@@ -27,7 +71,7 @@ class ResponseTemplate {
       status: this.status ?? 200,
       message: this.mess ?? "success",
       meta: this.metaData,
-      data: this.data,
+      data: convertedData,
     });
   }
 

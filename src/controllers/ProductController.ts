@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
 import Product from "../models/Product.js";
-import Settings from "../models/Settings.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
 
@@ -15,21 +14,12 @@ export const getAll = async (req: Request, res: Response) => {
     filter.container = req.query.container;
   }
 
-  const settings = await Settings.findOne();
   const [products, total] = await Promise.all([
     Product.find(filter).skip(skip).limit(limit).populate("container"),
     Product.countDocuments(filter),
   ]);
 
-  const data = products.map((p) => {
-    const obj = p.toJSON();
-    return {
-      ...obj,
-      priceSY: settings?.sypExchangeRate
-        ? p.price * settings.sypExchangeRate
-        : undefined,
-    };
-  });
+  const data = products.map((p) => p.toJSON());
 
   return responder()
     .code(200)

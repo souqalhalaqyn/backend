@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
 import Container from "../models/Container.js";
 import Product from "../models/Product.js";
-import Settings from "../models/Settings.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
 
@@ -18,19 +17,10 @@ async function attachProducts(containers: any[]) {
     productMap[cid].push(p);
   }
 
-  const settings = await Settings.findOne();
-  const rate = settings?.sypExchangeRate ?? 15000;
-
-  return containers.map((c) => {
-    const containerProducts = productMap[c._id.toString()] ?? [];
-    return {
-      ...c,
-      products: containerProducts.map((p: any) => ({
-        ...p,
-        priceSY: p.price ? p.price * rate : undefined,
-      })),
-    };
-  });
+  return containers.map((c) => ({
+    ...c,
+    products: productMap[c._id.toString()] ?? [],
+  }));
 }
 
 export const getAll = async (req: Request, res: Response) => {
