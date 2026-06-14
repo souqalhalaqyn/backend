@@ -257,6 +257,19 @@ export const deleteLocation = async (req: Request, res: Response) => {
     .send(res);
 };
 
+export const registerPushToken = async (req: Request, res: Response) => {
+  if (!req.user) throw new AppError("Authentication required", 401);
+
+  const { expoPushToken } = req.body;
+  if (!expoPushToken || typeof expoPushToken !== "string") {
+    throw new AppError("expoPushToken is required", 400);
+  }
+
+  await User.findByIdAndUpdate(req.user.userId, { expoPushToken });
+
+  return responder().code(200).message("Push token registered").send(res);
+};
+
 export const setDefaultLocation = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 

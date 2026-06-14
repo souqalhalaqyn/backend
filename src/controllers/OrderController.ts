@@ -8,6 +8,7 @@ import Product from "../models/Product.js";
 import User from "../models/User.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
+import { sendPushNotification } from "../services/notification.js";
 
 export const placeOrder = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
@@ -345,6 +346,17 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     changedAt: new Date(),
   });
   await order.save();
+
+  User.findById(order.user).then((user) => {
+    if (user?.expoPushToken) {
+      sendPushNotification(
+        user.expoPushToken,
+        "Order status updated",
+        `Your order status has been changed to ${status}`,
+        { orderId: order._id.toString(), status },
+      );
+    }
+  });
 
   return responder()
     .code(200)

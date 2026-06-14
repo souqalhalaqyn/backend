@@ -50,6 +50,10 @@ const UserSchema = new Schema(
       type: Number,
       default: 0,
     },
+    expoPushToken: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );
