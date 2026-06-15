@@ -29,8 +29,10 @@ function addSypFields(obj: any, rate: number): any {
         }
       }
 
-      if (typeof val === "object" && val !== null) {
+      if (val && typeof val === "object" && val.constructor === Object) {
         result[key] = addSypFields(val, rate);
+      } else if (Array.isArray(val)) {
+        result[key] = val.map((item: any) => addSypFields(item, rate));
       } else {
         result[key] = val;
       }
