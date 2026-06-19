@@ -1,26 +1,36 @@
 import { Router } from "express";
-import * as LocationController from "../controllers/LocationController.js";
+import {
+  stateCrud,
+  wayCrud,
+  branchCrud,
+  getStates,
+  getWaysByState,
+  getBranchesByWay,
+  getLocationTree,
+} from "../controllers/LocationController.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
 // Public endpoints
-router.get("/states", LocationController.getStates);
-router.get("/states/:stateId/regions", LocationController.getRegions);
-router.get("/regions/:regionId/ways", LocationController.getWays);
-router.get("/tree", LocationController.getLocationTree);
+router.get("/states", getStates);
+router.get("/states/:stateId/ways", getWaysByState);
+router.get("/ways/:wayId/branches", getBranchesByWay);
+router.get("/tree", getLocationTree);
 
-// Admin CRUD
-router.post("/states", authenticate, requireAdmin, LocationController.createState);
-router.put("/states/:id", authenticate, requireAdmin, LocationController.updateState);
-router.delete("/states/:id", authenticate, requireAdmin, LocationController.deleteState);
+// Admin CRUD - States
+router.post("/states", authenticate, requireAdmin, stateCrud.create);
+router.put("/states/:id", authenticate, requireAdmin, stateCrud.update);
+router.delete("/states/:id", authenticate, requireAdmin, stateCrud.remove);
 
-router.post("/regions", authenticate, requireAdmin, LocationController.createRegion);
-router.put("/regions/:id", authenticate, requireAdmin, LocationController.updateRegion);
-router.delete("/regions/:id", authenticate, requireAdmin, LocationController.deleteRegion);
+// Admin CRUD - Ways
+router.post("/ways", authenticate, requireAdmin, wayCrud.create);
+router.put("/ways/:id", authenticate, requireAdmin, wayCrud.update);
+router.delete("/ways/:id", authenticate, requireAdmin, wayCrud.remove);
 
-router.post("/ways", authenticate, requireAdmin, LocationController.createWay);
-router.put("/ways/:id", authenticate, requireAdmin, LocationController.updateWay);
-router.delete("/ways/:id", authenticate, requireAdmin, LocationController.deleteWay);
+// Admin CRUD - Branches
+router.post("/branches", authenticate, requireAdmin, branchCrud.create);
+router.put("/branches/:id", authenticate, requireAdmin, branchCrud.update);
+router.delete("/branches/:id", authenticate, requireAdmin, branchCrud.remove);
 
 export default router;

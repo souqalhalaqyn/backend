@@ -48,7 +48,15 @@ const OrderSchema = new Schema(
       default: "pending",
     },
     statusHistory: [StatusEntrySchema],
-    location: { type: String, default: "" },
+    locationType: {
+      type: String,
+      enum: ["branch", "direct"],
+      default: "direct",
+    },
+    state: { type: Schema.Types.ObjectId, ref: "State" },
+    way: { type: Schema.Types.ObjectId, ref: "Way" },
+    branch: { type: Schema.Types.ObjectId, ref: "Branch" },
+    address: { type: String, default: "" },
   },
   { timestamps: true },
 );

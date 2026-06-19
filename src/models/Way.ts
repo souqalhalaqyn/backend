@@ -13,26 +13,16 @@ const WaySchema = new Schema(
       required: true,
       trim: true,
     },
-    deliveryCompanyEn: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    deliveryCompanyAr: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    region: {
+    state: {
       type: Schema.Types.ObjectId,
-      ref: "Region",
+      ref: "State",
       required: true,
     },
   },
   { timestamps: true },
 );
 
-WaySchema.index({ region: 1, nameEn: 1 }, { unique: true });
+WaySchema.index({ state: 1, nameEn: 1 }, { unique: true });
 
 const Way = mongoose.model("Way", WaySchema);
 export default Way;

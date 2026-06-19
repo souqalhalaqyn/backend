@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "android": "expo run:android",
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {

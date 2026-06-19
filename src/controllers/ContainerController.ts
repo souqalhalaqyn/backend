@@ -2,122 +2,49 @@ import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
 import Container from "../models/Container.js";
 import Product from "../models/Product.js";
-import { localize } from "../utils/localize.js";
+import { createCrudController } from "../utils/CrudFactory.js";
+import { attachProducts } from "../utils/attachProducts.js";
 import { responder } from "../utils/Responder.js";
 
-async function attachProducts(containers: any[]) {
-  const containerIds = containers.map((c) => c._id);
-  const products = await Product.find({ container: { $in: containerIds } })
-    .sort({ productIndex: 1 })
-    .lean();
-  const productMap: Record<string, any[]> = {};
-  for (const p of products) {
-    const cid = p.container.toString();
-    if (!productMap[cid]) productMap[cid] = [];
-    productMap[cid].push(p);
-  }
+const CONTAINER_POPULATE = [
+  { path: "brand", select: "nameEn nameAr" },
+  { path: "categories", select: "nameEn nameAr" },
+];
 
-  return containers.map((c) => ({
-    ...c,
-    products: productMap[c._id.toString()] ?? [],
-  }));
+async function refetchContainer(id: any) {
+  return Container.findById(id).populate(CONTAINER_POPULATE).lean();
 }
 
-export const getAll = async (req: Request, res: Response) => {
-  const page = Math.max(1, Number(req.query.page) || 1);
-  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
-  const skip = (page - 1) * limit;
-
-  const filter = { isActive: true };
-
-  const [containers, total] = await Promise.all([
-    Container.find(filter)
-      .populate("brand", "nameEn nameAr")
-      .populate("categories", "nameEn nameAr")
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    Container.countDocuments(filter),
-  ]);
-
-  const data = await attachProducts(containers);
-
-  return responder()
-    .code(200)
-    .message("containers fetched")
-    .payload(localize(data, req.lang))
-    .meta({ page, limit, total, totalPages: Math.ceil(total / limit) })
-    .send(res);
-};
-
-export const getById = async (req: Request, res: Response) => {
-  const container = await Container.findOne({ _id: req.params.id, isActive: true })
-    .populate("brand", "nameEn nameAr")
-    .populate("categories", "nameEn nameAr")
-    .lean();
-
-  if (!container) throw new AppError("Container not found", 404);
-
-  const data = (await attachProducts([container]))[0];
-
-  return responder()
-    .code(200)
-    .message("container fetched")
-    .payload(localize(data, req.lang))
-    .send(res);
-};
-
-export const create = async (req: Request, res: Response) => {
-  const container = await Container.create(req.body);
-
-  const populated = await Container.findById(container._id)
-    .populate("brand", "nameEn nameAr")
-    .populate("categories", "nameEn nameAr")
-    .lean();
-
-  if (!populated) throw new AppError("Container not found after creation", 500);
-
-  return responder()
-    .code(201)
-    .message("container created")
-    .payload(localize(populated, req.lang))
-    .send(res);
-};
-
-export const update = async (req: Request, res: Response) => {
-  const container = await Container.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { returnDocument: "after", runValidators: true },
-  );
-  if (!container) throw new AppError("Container not found", 404);
-
-  const updated = await Container.findById(req.params.id)
-    .populate("brand", "nameEn nameAr")
-    .populate("categories", "nameEn nameAr")
-    .lean();
-
-  if (!updated) throw new AppError("Container not found after update", 500);
-
-  return responder()
-    .code(200)
-    .message("container updated")
-    .payload(localize(updated, req.lang))
-    .send(res);
-};
-
-export const remove = async (req: Request, res: Response) => {
-  const container = await Container.findByIdAndDelete(req.params.id);
-  if (!container) throw new AppError("Container not found", 404);
-
-  await Product.deleteMany({ container: container._id });
-
-  return responder()
-    .code(200)
-    .message("container deleted")
-    .payload(container)
-    .send(res);
-};
+export const containerCrud = createCrudController({
+  model: Container,
+  resourceName: "container",
+  populate: CONTAINER_POPULATE,
+  localize: true,
+  pagination: { defaultLimit: 20 },
+  listFilter: () => ({ isActive: true }),
+  hooks: {
+    afterList: async ({ docs }) => attachProducts(docs!),
+    afterGet: async ({ doc }) => (await attachProducts([doc!]))[0]!,
+    afterCreate: async ({ req, doc }) => {
+      if (!doc) throw new AppError("Container not created", 500);
+      const populated = await refetchContainer((doc as any)._id);
+      if (!populated) throw new AppError("Container not found after creation", 500);
+      return populated;
+    },
+    afterUpdate: async ({ req, doc }) => {
+      if (!doc) throw new AppError("Container not updated", 500);
+      const populated = await refetchContainer((doc as any)._id);
+      if (!populated) throw new AppError("Container not found after update", 500);
+      return populated;
+    },
+    beforeRemove: async ({ req }) => {
+      const container = await Container.findById(req.params.id);
+      if (container) {
+        await Product.deleteMany({ container: container._id });
+      }
+    },
+  },
+});
 
 export const addProductImage = async (req: Request, res: Response) => {
   const { productId } = req.params;
@@ -140,8 +67,8 @@ export const addProductImage = async (req: Request, res: Response) => {
 
 export const removeProductImage = async (req: Request, res: Response) => {
   const { productId, imageIndex } = req.params;
-
   const iIdx = Number(imageIndex);
+
   const product = await Product.findById(productId);
   if (!product) throw new AppError("Product not found", 404);
 

@@ -36,6 +36,7 @@ router.use("/orders", OrderRouter);
 router.use("/products", ProductRouter);
 router.use("/search", SearchRouter);
 router.get("/settings/slider", AdminController.getSliderImages);
+router.get("/settings/exchange-rate", AdminController.getExchangeRate);
 
 router.post("/upload", authenticate, requireAdmin, upload.array("images", 10), (req, res) => {
   const files = req.files as Express.Multer.File[] | undefined;

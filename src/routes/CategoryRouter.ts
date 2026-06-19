@@ -1,14 +1,14 @@
 import { Router } from "express";
-import * as CategoryController from "../controllers/CategoryController.js";
+import { categoryCrud, getAll, getById, getContainers } from "../controllers/CategoryController.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/", CategoryController.getAll);
-router.get("/:id", CategoryController.getById);
-router.get("/:id/containers", CategoryController.getContainers);
-router.post("/", authenticate, requireAdmin, CategoryController.create);
-router.put("/:id", authenticate, requireAdmin, CategoryController.update);
-router.delete("/:id", authenticate, requireAdmin, CategoryController.remove);
+router.get("/", getAll);
+router.get("/:id", getById);
+router.get("/:id/containers", getContainers);
+router.post("/", authenticate, requireAdmin, categoryCrud.create);
+router.put("/:id", authenticate, requireAdmin, categoryCrud.update);
+router.delete("/:id", authenticate, requireAdmin, categoryCrud.remove);
 
 export default router;

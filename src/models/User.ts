@@ -5,8 +5,8 @@ const LocationSchema = new Schema(
   {
     name: { type: String, required: true },
     state: { type: Schema.Types.ObjectId, ref: "State" },
-    region: { type: Schema.Types.ObjectId, ref: "Region" },
     way: { type: Schema.Types.ObjectId, ref: "Way" },
+    branch: { type: Schema.Types.ObjectId, ref: "Branch" },
     address: { type: String, default: "" },
   },
   { _id: false },

@@ -13,7 +13,7 @@ import { sendPushNotification } from "../services/notification.js";
 export const placeOrder = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
-  const { items, location } = req.body;
+  const { items, location, state, way, branch, locationType } = req.body;
   if (!items || !Array.isArray(items) || items.length === 0) {
     throw new AppError("Cart must contain at least one item", 400);
   }
@@ -129,7 +129,11 @@ export const placeOrder = async (req: Request, res: Response) => {
     items: orderItems,
     total,
     status: "pending",
-    location: location || "",
+    locationType: locationType || "direct",
+    state: state || undefined,
+    way: way || undefined,
+    branch: branch || undefined,
+    address: location || "",
     statusHistory: [
       { status: "pending", changedBy: req.user.userId, changedAt: new Date() },
     ],

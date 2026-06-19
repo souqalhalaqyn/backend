@@ -1,12 +1,11 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
-const StateSchema = new Schema(
+const BranchSchema = new Schema(
   {
     nameEn: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     nameAr: {
@@ -14,13 +13,16 @@ const StateSchema = new Schema(
       required: true,
       trim: true,
     },
-    isDirectDelivery: {
-      type: Boolean,
-      default: false,
+    way: {
+      type: Schema.Types.ObjectId,
+      ref: "Way",
+      required: true,
     },
   },
   { timestamps: true },
 );
 
-const State = mongoose.model("State", StateSchema);
-export default State;
+BranchSchema.index({ way: 1, nameEn: 1 }, { unique: true });
+
+const Branch = mongoose.model("Branch", BranchSchema);
+export default Branch;

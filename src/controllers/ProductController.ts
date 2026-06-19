@@ -1,89 +1,29 @@
 import type { Request, Response } from "express";
-import { AppError } from "../errors/AppError.js";
 import mongoose from "mongoose";
+import { AppError } from "../errors/AppError.js";
 import Product from "../models/Product.js";
-import { localize } from "../utils/localize.js";
+import { createCrudController } from "../utils/CrudFactory.js";
 import { responder } from "../utils/Responder.js";
 
-export const getAll = async (req: Request, res: Response) => {
-  const page = Math.max(1, Number(req.query.page) || 1);
-  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
-  const skip = (page - 1) * limit;
-
-  const filter: Record<string, unknown> = {};
-  const containerParam = (req.query.container as string) || (req.query.contianerId as string);
-  if (containerParam && mongoose.Types.ObjectId.isValid(containerParam)) {
-    filter.container = new mongoose.Types.ObjectId(containerParam);
-  }
-
-  const [products, total] = await Promise.all([
-    Product.find(filter).skip(skip).limit(limit).populate("container"),
-    Product.countDocuments(filter),
-  ]);
-
-  const data = products.map((p) => p.toJSON());
-
-  return responder()
-    .code(200)
-    .message("products fetched")
-    .payload(localize(data, req.lang))
-    .meta({
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    })
-    .send(res);
-};
-
-export const getById = async (req: Request, res: Response) => {
-  const product = await Product.findById(req.params.id).populate("container");
-  if (!product) throw new AppError("Product not found", 404);
-  return responder()
-    .code(200)
-    .message("product fetched")
-    .payload(localize(product.toJSON(), req.lang))
-    .send(res);
-};
-
-export const create = async (req: Request, res: Response) => {
-  const product = await Product.create(req.body);
-
-  return responder()
-    .code(201)
-    .message("product created")
-    .payload(product)
-    .send(res);
-};
-
-export const update = async (req: Request, res: Response) => {
-  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    returnDocument: "after",
-    runValidators: true,
-  });
-  if (!product) throw new AppError("Product not found", 404);
-
-  return responder()
-    .code(200)
-    .message("product updated")
-    .payload(product)
-    .send(res);
-};
-
-export const remove = async (req: Request, res: Response) => {
-  const product = await Product.findByIdAndDelete(req.params.id);
-  if (!product) throw new AppError("Product not found", 404);
-  return responder()
-    .code(200)
-    .message("product deleted")
-    .payload(product)
-    .send(res);
-};
+export const productCrud = createCrudController({
+  model: Product,
+  resourceName: "product",
+  localize: true,
+  populate: "container",
+  pagination: { defaultLimit: 20 },
+  listFilter: (req) => {
+    const filter: Record<string, unknown> = {};
+    const containerParam = (req.query.container as string) || (req.query.contianerId as string);
+    if (containerParam && mongoose.Types.ObjectId.isValid(containerParam)) {
+      filter.container = new mongoose.Types.ObjectId(containerParam);
+    }
+    return filter;
+  },
+});
 
 export const uploadImages = async (req: Request, res: Response) => {
   const files = req.files as Express.Multer.File[] | undefined;
-  if (!files || files.length === 0)
-    throw new AppError("no images provided", 400);
+  if (!files || files.length === 0) throw new AppError("no images provided", 400);
 
   const filenames = files.map((f) => f.filename);
 

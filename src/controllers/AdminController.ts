@@ -5,7 +5,7 @@ import User from "../models/User.js";
 import { responder } from "../utils/Responder.js";
 
 export const getSettings = async (_req: Request, res: Response) => {
-  const settings = await Settings.findOne();
+  const settings = await Settings.findOne().lean();
   if (!settings) throw new AppError("Settings not found", 404);
   return responder()
     .code(200)
@@ -71,6 +71,16 @@ export const removeSliderImage = async (req: Request, res: Response) => {
     .send(res);
 };
 
+export const getExchangeRate = async (_req: Request, res: Response) => {
+  const settings = await Settings.findOne();
+  const rate = settings?.sypExchangeRate ?? 15000;
+  return responder()
+    .code(200)
+    .message("Exchange rate fetched")
+    .payload({ rate })
+    .send(res);
+};
+
 export const getSliderImages = async (_req: Request, res: Response) => {
   const settings = await Settings.findOne();
   if (!settings) throw new AppError("Settings not found", 404);
@@ -85,7 +95,8 @@ export const getSliderImages = async (_req: Request, res: Response) => {
 export const getUsers = async (_req: Request, res: Response) => {
   const users = await User.find()
     .select("-password -refreshTokenVersion")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
   return responder()
     .code(200)
     .message("users fetched")
@@ -94,7 +105,7 @@ export const getUsers = async (_req: Request, res: Response) => {
 };
 
 export const getUserById = async (req: Request, res: Response) => {
-  const user = await User.findById(req.params.id).select("-password -refreshTokenVersion");
+  const user = await User.findById(req.params.id).select("-password -refreshTokenVersion").lean();
   if (!user) throw new AppError("User not found", 404);
   return responder()
     .code(200)
@@ -116,6 +127,6 @@ export const updateUserBalance = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("balance updated")
-    .payload(user)
+    .payload(user.toObject ? user.toObject() : user)
     .send(res);
 };

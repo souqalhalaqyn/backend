@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import Container from "../models/Container.js";
 import Product from "../models/Product.js";
-import Brand from "../models/Brand.js";
 import Category from "../models/Category.js";
+import { attachProducts } from "../utils/attachProducts.js";
 import { responder } from "../utils/Responder.js";
 
 const escapedRegex = (s: string) =>
@@ -11,23 +11,6 @@ const escapedRegex = (s: string) =>
 const bilingualRegex = (fields: string[], escaped: string) => ({
   $or: fields.map((f) => ({ [f]: { $regex: escaped, $options: "i" } })),
 });
-
-async function attachFirstProduct(containers: any[]) {
-  const containerIds = containers.map((c) => c._id);
-  const products = await Product.find({ container: { $in: containerIds } })
-    .sort({ productIndex: 1 })
-    .lean();
-  const productMap: Record<string, any[]> = {};
-  for (const p of products) {
-    const cid = p.container.toString();
-    if (!productMap[cid]) productMap[cid] = [];
-    productMap[cid].push(p);
-  }
-  return containers.map((c) => ({
-    ...c,
-    products: (productMap[c._id.toString()] ?? []).slice(0, 1),
-  }));
-}
 
 export const search = async (req: Request, res: Response) => {
   const q = (req.query.q as string)?.trim();
@@ -149,7 +132,7 @@ export const search = async (req: Request, res: Response) => {
       );
     }
 
-    const data = await attachFirstProduct(containers);
+    const data = await attachProducts(containers, 1);
 
     return responder()
       .code(200)
@@ -167,7 +150,7 @@ export const search = async (req: Request, res: Response) => {
 
     total = await Container.countDocuments({ ...containerRegexFilter, isActive: true });
 
-    const data = await attachFirstProduct(fallback);
+    const data = await attachProducts(fallback, 1);
 
     return responder()
       .code(200)

@@ -147,7 +147,7 @@ export const getLocations = async (req: Request, res: Response) => {
 export const addLocation = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
-  const { name, address, state, region, way } = req.body;
+  const { name, address, state, way, branch } = req.body;
   if (!name) throw new AppError("Location name is required", 400);
 
   const user = await User.findById(req.user.userId);
@@ -155,8 +155,8 @@ export const addLocation = async (req: Request, res: Response) => {
 
   const location: Record<string, unknown> = { name, address: address ?? "" };
   if (state) location.state = state;
-  if (region) location.region = region;
   if (way) location.way = way;
+  if (branch) location.branch = branch;
 
   const updatedUser = await User.findOneAndUpdate(
     { _id: req.user.userId, "locations.name": { $ne: name } },

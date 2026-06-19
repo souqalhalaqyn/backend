@@ -1,13 +1,13 @@
 import { Router } from "express";
-import * as BrandController from "../controllers/BrandController.js";
+import { brandController } from "../controllers/BrandController.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/", BrandController.getAll);
-router.get("/:id", BrandController.getById);
-router.post("/", authenticate, requireAdmin, BrandController.create);
-router.put("/:id", authenticate, requireAdmin, BrandController.update);
-router.delete("/:id", authenticate, requireAdmin, BrandController.remove);
+router.get("/", brandController.getAll);
+router.get("/:id", brandController.getById);
+router.post("/", authenticate, requireAdmin, brandController.create);
+router.put("/:id", authenticate, requireAdmin, brandController.update);
+router.delete("/:id", authenticate, requireAdmin, brandController.remove);
 
 export default router;
