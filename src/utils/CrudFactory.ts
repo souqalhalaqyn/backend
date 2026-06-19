@@ -66,7 +66,7 @@ export function createCrudController<T>(opts: CrudOptions<T>): CrudHandlers {
 
   function prepareData(data: any, lang: "en" | "ar", req: Request) {
     if (!data) return data;
-    if (req.user?.role === "admin") return data;
+    if (req.user?.role === "admin" || req.isAdminRequest) return data;
     return shouldLocalize ? localize(data, lang) : data;
   }
 

@@ -58,7 +58,7 @@ export const getAll = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("categories fetched")
-    .payload(localize(data, req.lang))
+    .payload(localize(data, req.lang, req))
     .send(res);
 };
 
@@ -80,7 +80,7 @@ export const getById = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("category fetched")
-    .payload(localize(data, req.lang))
+    .payload(localize(data, req.lang, req))
     .send(res);
 };
 
@@ -105,7 +105,7 @@ export const getContainers = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("containers fetched")
-    .payload(localize(data, req.lang))
+    .payload(localize(data, req.lang, req))
     .meta({ page, limit, total, totalPages: Math.ceil(total / limit) })
     .send(res);
 };

@@ -19,7 +19,7 @@ export const getAvailable = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Offers fetched")
-    .payload(localize(offers, req.lang))
+    .payload(localize(offers, req.lang, req))
     .send(res);
 };
 
@@ -34,7 +34,7 @@ export const getById = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Offer fetched")
-    .payload(localize(offer, req.lang))
+    .payload(localize(offer, req.lang, req))
     .send(res);
 };
 
@@ -84,7 +84,7 @@ export const buyOffer = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Offer purchased successfully")
-    .payload(localize(populated as any, req.lang))
+    .payload(localize(populated as any, req.lang, req))
     .send(res);
 };
 
@@ -124,7 +124,7 @@ export const getAll = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Offers fetched")
-    .payload(localize(offers, req.lang))
+    .payload(localize(offers, req.lang, req))
     .send(res);
 };
 
@@ -140,7 +140,7 @@ export const getByIdAdmin = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Offer fetched")
-    .payload(localize(offer as any, req.lang))
+    .payload(localize(offer as any, req.lang, req))
     .send(res);
 };
 
@@ -181,7 +181,7 @@ export const create = async (req: Request, res: Response) => {
   return responder()
     .code(201)
     .message("Offer created")
-    .payload(localize(populated as any, req.lang))
+    .payload(localize(populated as any, req.lang, req))
     .send(res);
 };
 
@@ -209,7 +209,7 @@ export const update = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Offer updated")
-    .payload(localize(populated as any, req.lang))
+    .payload(localize(populated as any, req.lang, req))
     .send(res);
 };
 

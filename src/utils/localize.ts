@@ -82,7 +82,9 @@ function localizeDoc(doc: Record<string, unknown>, lang: "en" | "ar"): Record<st
 export function localize<T extends Record<string, unknown> | Record<string, unknown>[]>(
   data: T,
   lang: "en" | "ar",
+  req?: { isAdminRequest?: boolean },
 ): T {
+  if (req?.isAdminRequest) return data;
   if (Array.isArray(data)) {
     return data.map((item) => localizeDoc(item, lang)) as T;
   }

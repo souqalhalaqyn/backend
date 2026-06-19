@@ -10,17 +10,17 @@ import { responder } from "../utils/Responder.js";
 
 export const getStates = async (req: Request, res: Response) => {
   const states = await State.find().sort({ nameEn: 1 }).lean();
-  return responder().code(200).message("States fetched").payload(localize(states, req.lang)).send(res);
+  return responder().code(200).message("States fetched").payload(localize(states, req.lang, req)).send(res);
 };
 
 export const getWaysByState = async (req: Request, res: Response) => {
   const ways = await Way.find({ state: req.params.stateId }).sort({ nameEn: 1 }).lean();
-  return responder().code(200).message("Ways fetched").payload(localize(ways, req.lang)).send(res);
+  return responder().code(200).message("Ways fetched").payload(localize(ways, req.lang, req)).send(res);
 };
 
 export const getBranchesByWay = async (req: Request, res: Response) => {
   const branches = await Branch.find({ way: req.params.wayId }).sort({ nameEn: 1 }).lean();
-  return responder().code(200).message("Branches fetched").payload(localize(branches, req.lang)).send(res);
+  return responder().code(200).message("Branches fetched").payload(localize(branches, req.lang, req)).send(res);
 };
 
 export const getLocationTree = async (req: Request, res: Response) => {
@@ -59,7 +59,7 @@ export const getLocationTree = async (req: Request, res: Response) => {
     })),
   }));
 
-  return responder().code(200).message("Location tree fetched").payload(localize(tree, req.lang)).send(res);
+  return responder().code(200).message("Location tree fetched").payload(localize(tree, req.lang, req)).send(res);
 };
 
 // -- Admin CRUD via factory --

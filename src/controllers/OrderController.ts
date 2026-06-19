@@ -214,7 +214,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Orders fetched")
-    .payload(localize(orders.map((o) => o.toJSON()), req.lang))
+    .payload(localize(orders.map((o) => o.toJSON()), req.lang, req))
     .send(res);
 };
 
@@ -232,7 +232,7 @@ export const getOrderById = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Order fetched")
-    .payload(localize(order.toJSON(), req.lang))
+    .payload(localize(order.toJSON(), req.lang, req))
     .send(res);
 };
 
@@ -275,20 +275,34 @@ export const cancelOrder = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Order cancelled")
-    .payload(localize(order.toJSON(), req.lang))
+    .payload(localize(order.toJSON(), req.lang, req))
     .send(res);
 };
 
 export const getAllOrders = async (req: Request, res: Response) => {
-  const orders = await Order.find()
-    .populate("user", "phone name")
-    .populate("items.product", "nameEn nameAr images price")
-    .sort({ createdAt: -1 });
+  const filter: Record<string, any> = {};
+  if (req.query.status) filter.status = req.query.status;
+
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+  const skip = (page - 1) * limit;
+
+  const [orders, total] = await Promise.all([
+    Order.find(filter)
+      .populate("user", "phone name")
+      .populate("items.product", "nameEn nameAr images price")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Order.countDocuments(filter),
+  ]);
 
   return responder()
     .code(200)
     .message("Orders fetched")
-    .payload(localize(orders.map((o) => o.toJSON()), req.lang))
+    .payload(localize(orders, req.lang, req))
+    .meta({ page, limit, total, totalPages: Math.ceil(total / limit) })
     .send(res);
 };
 
@@ -365,6 +379,6 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   return responder()
     .code(200)
     .message("Order status updated")
-    .payload(localize(order.toJSON(), req.lang))
+    .payload(localize(order.toJSON(), req.lang, req))
     .send(res);
 };
