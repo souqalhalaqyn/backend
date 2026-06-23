@@ -1,3 +1,6 @@
+import { readFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import { Router } from "express";
 import * as AdminController from "../controllers/AdminController.js";
 import AdminRouter from "./AdminRouter.js";
@@ -15,14 +18,24 @@ import OrderRouter from "./OrderRouter.js";
 import ProductRouter from "./ProductRouter.js";
 import SearchRouter from "./SearchRouter.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
+import AdRouter from "./AdRouter.js";
 import { upload } from "../utils/upload.js";
 import { AppError } from "../errors/AppError.js";
 import { responder } from "../utils/Responder.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const appVersions = JSON.parse(readFileSync(resolve(__dirname, "../data/app-versions.json"), "utf-8"));
+
 const router = Router();
+
+router.get("/app-versions", (_req, res) => {
+  return responder().code(200).message("app versions").payload(appVersions).send(res);
+});
 
 router.use("/admin", AdminRouter);
 router.use("/assets", AssetsRouter);
+router.use("/ads", AdRouter);
 router.use("/auth", AuthRouter);
 router.use("/bucket", BucketRouter);
 router.use("/brands", BrandRouter);

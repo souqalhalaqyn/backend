@@ -1,4 +1,5 @@
 import { Router } from "express";
+import * as AdController from "../controllers/AdController.js";
 import * as AdminController from "../controllers/AdminController.js";
 import * as OrderController from "../controllers/OrderController.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
@@ -21,5 +22,9 @@ router.put(
 router.get("/users", authenticate, requireAdmin, AdminController.getUsers);
 router.get("/users/:id", authenticate, requireAdmin, AdminController.getUserById);
 router.put("/users/:id/balance", authenticate, requireAdmin, AdminController.updateUserBalance);
+
+router.get("/ads", authenticate, requireAdmin, AdController.getAllAdRequests);
+router.put("/ads/:id/approve", authenticate, requireAdmin, AdController.approveAdRequest);
+router.put("/ads/:id/reject", authenticate, requireAdmin, AdController.rejectAdRequest);
 
 export default router;

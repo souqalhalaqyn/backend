@@ -309,7 +309,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
 export const updateOrderStatus = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
-  const { status } = req.body;
+  const { status, force } = req.body;
   const validStatuses = [
     "pending",
     "confirmed",
@@ -340,6 +340,30 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       `Cannot transition from ${order.status} to ${status}`,
       400,
     );
+  }
+
+  if (status === "confirmed" && !force) {
+    const products = await Product.find({
+      _id: { $in: order.items.map((item) => item.product) },
+    }).lean();
+    const stockMap = new Map(products.map((p) => [p._id.toString(), p.stock]));
+    const stockWarnings: { nameEn: string; nameAr: string; quantity: number; stock: number }[] = [];
+
+    for (const item of order.items) {
+      const currentStock = stockMap.get(item.product.toString()) ?? 0;
+      if (item.quantity > currentStock) {
+        stockWarnings.push({ nameEn: item.nameEn, nameAr: item.nameAr, quantity: item.quantity, stock: currentStock });
+      }
+    }
+
+    if (stockWarnings.length > 0) {
+      return responder()
+        .code(200)
+        .message("Stock warning")
+        .payload(localize(order.toJSON(), req.lang, req))
+        .meta({ stockWarnings })
+        .send(res);
+    }
   }
 
   if (status === "cancelled") {
