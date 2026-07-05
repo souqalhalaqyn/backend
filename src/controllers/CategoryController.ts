@@ -13,6 +13,7 @@ export const categoryCrud = createCrudController({
   model: Category,
   resourceName: "category",
   localize: true,
+  pagination: { maxLimit: 10000 },
 });
 
 const LIMIT_PER_CATEGORY = 10;

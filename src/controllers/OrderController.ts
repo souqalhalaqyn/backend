@@ -284,7 +284,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
   if (req.query.status) filter.status = req.query.status;
 
   const page = Math.max(1, Number(req.query.page) || 1);
-  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+  const limit = Math.min(10000, Math.max(1, Number(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
   const [orders, total] = await Promise.all([

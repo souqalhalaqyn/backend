@@ -107,13 +107,11 @@ export const search = async (req: Request, res: Response) => {
       .lean();
 
     const all = [...textResults, ...regexMatch];
-
     total = all.length;
-    containers = all.slice(skip, skip + limit);
 
     if (sort === "price_asc" || sort === "price_desc") {
-      const containerIds = containers.map((c) => c._id);
-      const firstProducts = await Product.find({ container: { $in: containerIds } })
+      const allIds = all.map((c) => c._id);
+      const firstProducts = await Product.find({ container: { $in: allIds } })
         .sort({ productIndex: 1 })
         .lean();
       const priceMap: Record<string, number> = {};
@@ -121,16 +119,18 @@ export const search = async (req: Request, res: Response) => {
         const cid = p.container.toString();
         if (priceMap[cid] === undefined) priceMap[cid] = p.price;
       }
-      containers.sort((a, b) => {
+      all.sort((a, b) => {
         const pa = priceMap[a._id.toString()] ?? 0;
         const pb = priceMap[b._id.toString()] ?? 0;
         return sort === "price_asc" ? pa - pb : pb - pa;
       });
     } else if (sort === "name") {
-      containers.sort((a, b) =>
-        (a as any).nameEn?.localeCompare((b as any).nameEn ?? "") ?? 0,
+      all.sort((a, b) =>
+        ((a as any).nameAr || (a as any).nameEn || "")?.localeCompare((b as any).nameAr || (b as any).nameEn || "") ?? 0,
       );
     }
+
+    containers = all.slice(skip, skip + limit);
 
     const data = await attachProducts(containers, 1);
 

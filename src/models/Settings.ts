@@ -10,7 +10,7 @@ const SettingsSchema = new Schema(
       min: [0, "Exchange rate cannot be negative"],
     },
     sliderImages: {
-      type: [String],
+      type: [{ image: String, productId: String }],
       default: [],
     },
   },

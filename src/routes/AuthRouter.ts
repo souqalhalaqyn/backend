@@ -17,6 +17,7 @@ router.post("/signup", authLimiter, AuthController.signup);
 router.post("/login", authLimiter, AuthController.login);
 router.post("/refresh", authLimiter, AuthController.refresh);
 router.post("/logout", authenticate, AuthController.logout);
+router.post("/change-password", authenticate, AuthController.changeMyPassword);
 router.post("/register-push-token", authenticate, AuthController.registerPushToken);
 
 // -- Locations --

@@ -10,7 +10,7 @@ export const productCrud = createCrudController({
   resourceName: "product",
   localize: true,
   populate: "container",
-  pagination: { defaultLimit: 20 },
+  pagination: { defaultLimit: 20, maxLimit: 10000 },
   listFilter: (req) => {
     const filter: Record<string, unknown> = {};
     const containerParam = (req.query.container as string) || (req.query.contianerId as string);

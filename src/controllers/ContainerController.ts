@@ -20,7 +20,7 @@ export const containerCrud = createCrudController({
   resourceName: "container",
   populate: CONTAINER_POPULATE,
   localize: true,
-  pagination: { defaultLimit: 20 },
+  pagination: { defaultLimit: 20, maxLimit: 10000 },
   listFilter: () => ({ isActive: true }),
   hooks: {
     afterList: async ({ docs }) => attachProducts(docs!),

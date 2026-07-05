@@ -5,4 +5,5 @@ export const brandController = createCrudController({
   model: Brand,
   resourceName: "brand",
   localize: true,
+  pagination: { maxLimit: 10000 },
 });

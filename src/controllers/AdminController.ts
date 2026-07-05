@@ -35,13 +35,16 @@ export const updateSettings = async (req: Request, res: Response) => {
 };
 
 export const addSliderImage = async (req: Request, res: Response) => {
-  const { image } = req.body;
+  const { image, productId } = req.body;
   if (!image) throw new AppError("Image filename is required", 400);
 
   const settings = await Settings.findOne();
   if (!settings) throw new AppError("Settings not found", 404);
 
-  settings.sliderImages.push(image);
+  const entry: Record<string, unknown> = { image };
+  if (productId) entry.productId = productId;
+
+  settings.sliderImages.push(entry as any);
   await settings.save();
 
   return responder()
@@ -71,6 +74,28 @@ export const removeSliderImage = async (req: Request, res: Response) => {
     .send(res);
 };
 
+export const updateSliderImage = async (req: Request, res: Response) => {
+  const index = Number(req.params.index);
+  const { productId } = req.body;
+
+  const settings = await Settings.findOne();
+  if (!settings) throw new AppError("Settings not found", 404);
+
+  if (index < 0 || index >= settings.sliderImages.length) {
+    throw new AppError("Slider image not found", 404);
+  }
+
+  settings.sliderImages[index] = { ...settings.sliderImages[index], productId: productId ?? "" } as any;
+  settings.markModified("sliderImages");
+  await settings.save();
+
+  return responder()
+    .code(200)
+    .message("Slider image updated")
+    .payload(settings.sliderImages)
+    .send(res);
+};
+
 export const getExchangeRate = async (_req: Request, res: Response) => {
   const settings = await Settings.findOne();
   const rate = settings?.sypExchangeRate ?? 15000;
@@ -81,26 +106,41 @@ export const getExchangeRate = async (_req: Request, res: Response) => {
     .send(res);
 };
 
-export const getSliderImages = async (_req: Request, res: Response) => {
+export const getSliderImages = async (req: Request, res: Response) => {
   const settings = await Settings.findOne();
   if (!settings) throw new AppError("Settings not found", 404);
+
+  const entries = settings.sliderImages.map((s: any) =>
+    typeof s === "string" ? { image: s, productId: "" } : s,
+  );
 
   return responder()
     .code(200)
     .message("Slider images fetched")
-    .payload(settings.sliderImages)
+    .payload(entries)
     .send(res);
 };
 
-export const getUsers = async (_req: Request, res: Response) => {
-  const users = await User.find()
-    .select("-password -refreshTokenVersion")
-    .sort({ createdAt: -1 })
-    .lean();
+export const getUsers = async (req: Request, res: Response) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(10000, Math.max(1, Number(req.query.limit) || 20));
+  const skip = (page - 1) * limit;
+
+  const [users, total] = await Promise.all([
+    User.find()
+      .select("-password -refreshTokenVersion")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    User.countDocuments(),
+  ]);
+
   return responder()
     .code(200)
     .message("users fetched")
     .payload(users)
+    .meta({ page, limit, total, totalPages: Math.ceil(total / limit) })
     .send(res);
 };
 
@@ -128,5 +168,55 @@ export const updateUserBalance = async (req: Request, res: Response) => {
     .code(200)
     .message("balance updated")
     .payload(user.toObject ? user.toObject() : user)
+    .send(res);
+};
+
+export const blockUser = async (req: Request, res: Response) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { isBlocked: true },
+    { new: true, select: "-password -refreshTokenVersion" },
+  );
+  if (!user) throw new AppError("User not found", 404);
+  return responder()
+    .code(200)
+    .message("user blocked")
+    .payload(user)
+    .send(res);
+};
+
+export const unblockUser = async (req: Request, res: Response) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { isBlocked: false },
+    { new: true, select: "-password -refreshTokenVersion" },
+  );
+  if (!user) throw new AppError("User not found", 404);
+  return responder()
+    .code(200)
+    .message("user unblocked")
+    .payload(user)
+    .send(res);
+};
+
+export const changeUserPassword = async (req: Request, res: Response) => {
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) {
+    throw new AppError("Password must be at least 6 characters", 400);
+  }
+
+  const bcrypt = await import("bcrypt");
+  const hashed = await bcrypt.hash(newPassword, 10);
+
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { password: hashed, mustChangePassword: true, refreshTokenVersion: 0 },
+    { new: true, select: "-password -refreshTokenVersion" },
+  );
+  if (!user) throw new AppError("User not found", 404);
+  return responder()
+    .code(200)
+    .message("password changed, user must change on next login")
+    .payload(user)
     .send(res);
 };

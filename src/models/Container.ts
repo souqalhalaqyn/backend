@@ -5,10 +5,8 @@ const ContainerSchema = new Schema(
   {
     nameEn: {
       type: String,
-      required: [true, "Container name (English) is required"],
-      unique: true,
+      default: "",
       trim: true,
-      minlength: [3, "Container name must be longer than 3 characters"],
     },
     nameAr: {
       type: String,

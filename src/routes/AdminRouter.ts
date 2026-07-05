@@ -9,6 +9,7 @@ const router = Router();
 router.get("/settings", authenticate, requireAdmin, AdminController.getSettings);
 router.put("/settings", authenticate, requireAdmin, AdminController.updateSettings);
 router.post("/settings/slider", authenticate, requireAdmin, AdminController.addSliderImage);
+router.put("/settings/slider/:index", authenticate, requireAdmin, AdminController.updateSliderImage);
 router.delete("/settings/slider/:index", authenticate, requireAdmin, AdminController.removeSliderImage);
 
 router.get("/orders", authenticate, requireAdmin, OrderController.getAllOrders);
@@ -22,6 +23,9 @@ router.put(
 router.get("/users", authenticate, requireAdmin, AdminController.getUsers);
 router.get("/users/:id", authenticate, requireAdmin, AdminController.getUserById);
 router.put("/users/:id/balance", authenticate, requireAdmin, AdminController.updateUserBalance);
+router.put("/users/:id/block", authenticate, requireAdmin, AdminController.blockUser);
+router.put("/users/:id/unblock", authenticate, requireAdmin, AdminController.unblockUser);
+router.put("/users/:id/change-password", authenticate, requireAdmin, AdminController.changeUserPassword);
 
 router.get("/ads", authenticate, requireAdmin, AdController.getAllAdRequests);
 router.put("/ads/:id/approve", authenticate, requireAdmin, AdController.approveAdRequest);

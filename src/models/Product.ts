@@ -6,10 +6,8 @@ const ProductSchema = new Schema(
   {
     nameEn: {
       type: String,
-      required: [true, "Product name (English) is required"],
-      unique: true,
+      default: "",
       trim: true,
-      minlength: [3, "Product name must be longer than 3 characters"],
     },
     nameAr: {
       type: String,
@@ -18,8 +16,7 @@ const ProductSchema = new Schema(
     },
     shortDescriptionEn: {
       type: String,
-      required: [true, "Short description (English) is required"],
-      maxlength: [150, "Short description should be concise (max 150 chars)"],
+      default: "",
     },
     shortDescriptionAr: {
       type: String,
@@ -27,7 +24,7 @@ const ProductSchema = new Schema(
     },
     longDescriptionEn: {
       type: String,
-      required: [true, "Long description (English) is required"],
+      default: "",
     },
     longDescriptionAr: {
       type: String,

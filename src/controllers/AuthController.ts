@@ -61,6 +61,8 @@ export const login = async (req: Request, res: Response) => {
   const user = await User.findOne({ phone });
   if (!user) throw new AppError("Invalid phone or password", 401);
 
+  if (user.isBlocked) throw new AppError("Account is blocked. Contact support.", 403);
+
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new AppError("Invalid phone or password", 401);
 
@@ -79,7 +81,13 @@ export const login = async (req: Request, res: Response) => {
     .payload({
       accessToken,
       refreshToken,
-      user: { _id: user._id, phone: user.phone, role: user.role, name: user.name },
+      user: {
+        _id: user._id,
+        phone: user.phone,
+        role: user.role,
+        name: user.name,
+        mustChangePassword: user.mustChangePassword,
+      },
     })
     .send(res);
 };
@@ -268,6 +276,32 @@ export const registerPushToken = async (req: Request, res: Response) => {
   await User.findByIdAndUpdate(req.user.userId, { expoPushToken });
 
   return responder().code(200).message("Push token registered").send(res);
+};
+
+export const changeMyPassword = async (req: Request, res: Response) => {
+  if (!req.user) throw new AppError("Authentication required", 401);
+
+  const { currentPassword, newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) {
+    throw new AppError("Password must be at least 6 characters", 400);
+  }
+
+  const user = await User.findById(req.user.userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  if (currentPassword) {
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) throw new AppError("Current password is incorrect", 400);
+  } else if (!user.mustChangePassword) {
+    throw new AppError("Current password is required", 400);
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  user.password = hashed;
+  user.mustChangePassword = false;
+  await user.save();
+
+  return responder().code(200).message("Password changed successfully").send(res);
 };
 
 export const setDefaultLocation = async (req: Request, res: Response) => {
