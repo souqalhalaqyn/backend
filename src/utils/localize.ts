@@ -8,8 +8,7 @@
  *
  * Bilingual field pairs recognized:
  *   nameEn/nameAr → name
- *   shortDescriptionEn/shortDescriptionAr → shortDescription
- *   longDescriptionEn/longDescriptionAr → longDescription
+ *   descriptionEn/descriptionAr → description
  *   descriptionEn/descriptionAr → description
  *   deliveryCompanyEn/deliveryCompanyAr → deliveryCompany
  *   tagsEn/tagsAr → tags
@@ -19,8 +18,6 @@
 
 const BILINGUAL_PAIRS = [
   ["nameEn", "nameAr"],
-  ["shortDescriptionEn", "shortDescriptionAr"],
-  ["longDescriptionEn", "longDescriptionAr"],
   ["descriptionEn", "descriptionAr"],
   ["deliveryCompanyEn", "deliveryCompanyAr"],
 ] as const;

@@ -13,10 +13,8 @@ const ContainerSchema = new Schema(
       required: [true, "Container name (Arabic) is required"],
       trim: true,
     },
-    shortDescriptionEn: { type: String, default: "" },
-    shortDescriptionAr: { type: String, default: "" },
-    longDescriptionEn: { type: String, default: "" },
-    longDescriptionAr: { type: String, default: "" },
+    descriptionEn: { type: String, default: "" },
+    descriptionAr: { type: String, default: "" },
     brand: {
       type: Schema.Types.ObjectId,
       ref: "Brand",
@@ -35,7 +33,7 @@ const ContainerSchema = new Schema(
 
 ContainerSchema.index({ isActive: 1 });
 ContainerSchema.index(
-  { nameEn: "text", nameAr: "text", shortDescriptionEn: "text", shortDescriptionAr: "text", longDescriptionEn: "text", longDescriptionAr: "text" },
+  { nameEn: "text", nameAr: "text", descriptionEn: "text", descriptionAr: "text" },
   { name: "Container_text_index" },
 );
 

@@ -23,17 +23,11 @@ export const getMyRequests = async (req: Request, res: Response) => {
 export const createRequest = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
-  const amount = Number(req.body.amount);
-  if (!amount || amount <= 0) {
-    throw new AppError("Valid positive amount is required", 400);
-  }
-
   const file = req.file as Express.Multer.File | undefined;
   const image = file ? file.filename : (req.body.image ?? "");
 
   const chargeRequest = await ChargeRequest.create({
     user: req.user.userId,
-    amount,
     image,
     status: "pending",
   });
@@ -86,14 +80,19 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
     throw new AppError("Only pending requests can be updated", 400);
   }
 
-  chargeRequest.status = status;
-  await chargeRequest.save();
-
   if (status === "done") {
+    const amount = Number(req.body.amount);
+    if (!amount || amount <= 0) {
+      throw new AppError("Valid positive amount is required when approving", 400);
+    }
+    chargeRequest.amount = amount;
     await User.findByIdAndUpdate(chargeRequest.user, {
-      $inc: { balance: chargeRequest.amount },
+      $inc: { balance: amount },
     });
   }
+
+  chargeRequest.status = status;
+  await chargeRequest.save();
 
   const populated = await ChargeRequest.findById(chargeRequest._id)
     .populate("user", "phone name")

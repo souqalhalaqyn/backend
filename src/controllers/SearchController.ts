@@ -33,7 +33,7 @@ export const search = async (req: Request, res: Response) => {
   const textFilter = { $text: { $search: q } };
 
   const containerRegexFilter = bilingualRegex(
-    ["nameEn", "nameAr", "shortDescriptionEn", "shortDescriptionAr", "longDescriptionEn", "longDescriptionAr"],
+    ["nameEn", "nameAr", "descriptionEn", "descriptionAr"],
     escaped,
   );
 

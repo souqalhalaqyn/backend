@@ -11,8 +11,8 @@ const ChargeRequestSchema = new Schema(
     },
     amount: {
       type: Number,
-      required: [true, "Amount is required"],
-      min: [0.01, "Amount must be positive"],
+      default: 0,
+      min: [0, "Amount must be positive"],
     },
     image: {
       type: String,

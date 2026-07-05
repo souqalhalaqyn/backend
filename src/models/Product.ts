@@ -14,21 +14,13 @@ const ProductSchema = new Schema(
       required: [true, "Product name (Arabic) is required"],
       trim: true,
     },
-    shortDescriptionEn: {
+    descriptionEn: {
       type: String,
       default: "",
     },
-    shortDescriptionAr: {
+    descriptionAr: {
       type: String,
-      required: [true, "Short description (Arabic) is required"],
-    },
-    longDescriptionEn: {
-      type: String,
-      default: "",
-    },
-    longDescriptionAr: {
-      type: String,
-      required: [true, "Long description (Arabic) is required"],
+      required: [true, "Description (Arabic) is required"],
     },
     price: {
       type: Number,

@@ -8,10 +8,8 @@ const AdProductSchema = new Schema({
   price: { type: Number, required: true, min: 0 },
   stock: { type: Number, default: 0 },
   images: { type: [String], default: [] },
-  shortDescriptionEn: { type: String, default: "" },
-  shortDescriptionAr: { type: String, default: "" },
-  longDescriptionEn: { type: String, default: "" },
-  longDescriptionAr: { type: String, default: "" },
+  descriptionEn: { type: String, default: "" },
+  descriptionAr: { type: String, default: "" },
   tagsEn: { type: [String], default: [] },
   tagsAr: { type: [String], default: [] },
   aliasesEn: { type: [String], default: [] },
@@ -23,10 +21,8 @@ const AdProductSchema = new Schema({
 const AdContainerSchema = new Schema({
   nameEn: { type: String, required: true },
   nameAr: { type: String, required: true },
-  shortDescriptionEn: { type: String, default: "" },
-  shortDescriptionAr: { type: String, default: "" },
-  longDescriptionEn: { type: String, default: "" },
-  longDescriptionAr: { type: String, default: "" },
+  descriptionEn: { type: String, default: "" },
+  descriptionAr: { type: String, default: "" },
 }, { _id: true });
 
 const AdRequestSchema = new Schema({

@@ -11,7 +11,7 @@ import { responder } from "../utils/Responder.js";
 
 export const getAvailable = async (req: Request, res: Response) => {
   const offers = await Offer.find({ status: "available" })
-    .populate("container", "nameEn nameAr shortDescriptionEn shortDescriptionAr")
+    .populate("container", "nameEn nameAr descriptionEn descriptionAr")
     .populate("product", "nameEn nameAr images price stock")
     .sort({ createdAt: -1 })
     .lean();
@@ -25,8 +25,8 @@ export const getAvailable = async (req: Request, res: Response) => {
 
 export const getById = async (req: Request, res: Response) => {
   const offer = await Offer.findById(req.params.id)
-    .populate("container", "nameEn nameAr shortDescriptionEn shortDescriptionAr")
-    .populate("product", "nameEn nameAr images price stock longDescriptionEn longDescriptionAr tagsEn tagsAr aliasesEn aliasesAr notesEn notesAr")
+    .populate("container", "nameEn nameAr descriptionEn descriptionAr")
+    .populate("product", "nameEn nameAr images price stock descriptionEn descriptionAr tagsEn tagsAr aliasesEn aliasesAr notesEn notesAr")
     .lean();
 
   if (!offer) throw new AppError("Offer not found", 404);
@@ -77,7 +77,7 @@ export const buyOffer = async (req: Request, res: Response) => {
   }
 
   const populated = await Offer.findById(offer._id)
-    .populate("container", "nameEn nameAr shortDescriptionEn shortDescriptionAr")
+    .populate("container", "nameEn nameAr descriptionEn descriptionAr")
     .populate("product", "nameEn nameAr images price stock")
     .lean();
 
@@ -92,7 +92,7 @@ export const getMyOffer = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
   const offer = await Offer.findOne({ buyer: req.user.userId, status: { $in: ["sold", "completed"] } })
-    .populate("container", "nameEn nameAr shortDescriptionEn shortDescriptionAr")
+    .populate("container", "nameEn nameAr descriptionEn descriptionAr")
     .populate("product", "nameEn nameAr images price stock")
     .sort({ createdAt: -1 })
     .lean();

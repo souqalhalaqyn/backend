@@ -17,6 +17,14 @@ export const productCrud = createCrudController({
     if (containerParam && mongoose.Types.ObjectId.isValid(containerParam)) {
       filter.container = new mongoose.Types.ObjectId(containerParam);
     }
+    const q = (req.query.q as string)?.trim();
+    if (q) {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { nameEn: { $regex: escaped, $options: "i" } },
+        { nameAr: { $regex: escaped, $options: "i" } },
+      ];
+    }
     return filter;
   },
 });
