@@ -9,8 +9,8 @@ export const createAdRequest = async (req: Request, res: Response) => {
 
   const { container, products } = req.body;
 
-  if (!container || !container.nameEn || !container.nameAr) {
-    throw new AppError("Container nameEn and nameAr are required", 400);
+  if (!container || !container.nameAr) {
+    throw new AppError("Container nameAr is required", 400);
   }
   if (!products || !Array.isArray(products) || products.length === 0) {
     throw new AppError("At least one product is required", 400);
@@ -18,33 +18,27 @@ export const createAdRequest = async (req: Request, res: Response) => {
 
   for (let i = 0; i < products.length; i++) {
     const p = products[i];
-    if (!p.nameEn || !p.nameAr || p.price == null || Number(p.price) <= 0) {
-      throw new AppError(`Product at index ${i} is missing required fields (nameEn, nameAr, price)`, 400);
+    if (!p.nameAr || p.price == null || Number(p.price) <= 0) {
+      throw new AppError(`Product at index ${i} is missing required fields (nameAr, price)`, 400);
     }
   }
 
   const ad = await AdRequest.create({
     user: req.user.userId,
     container: {
-      nameEn: container.nameEn,
+      nameEn: container.nameEn || container.nameAr,
       nameAr: container.nameAr,
-      descriptionEn: container.descriptionEn || "",
+      descriptionEn: container.descriptionEn || container.descriptionAr || "",
       descriptionAr: container.descriptionAr || "",
     },
     products: products.map((p: any) => ({
-      nameEn: p.nameEn,
+      nameEn: p.nameEn || p.nameAr,
       nameAr: p.nameAr,
       price: Number(p.price),
       stock: Number(p.stock) || 0,
       images: p.images || [],
-      descriptionEn: p.descriptionEn || "",
+      descriptionEn: p.descriptionEn || p.descriptionAr || "",
       descriptionAr: p.descriptionAr || "",
-      tagsEn: p.tagsEn || [],
-      tagsAr: p.tagsAr || [],
-      aliasesEn: p.aliasesEn || [],
-      aliasesAr: p.aliasesAr || [],
-      notesEn: p.notesEn || [],
-      notesAr: p.notesAr || [],
     })),
   });
 
