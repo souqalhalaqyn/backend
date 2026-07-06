@@ -33,7 +33,7 @@ export interface CrudOptions<T = any> {
   pagination?: PaginationConfig;
   localize?: boolean;
   hooks?: CrudHooks<T>;
-  listFilter?: (req: Request) => Record<string, any>;
+  listFilter?: (req: Request) => Record<string, any> | Promise<Record<string, any>>;
 }
 
 export interface CrudHandlers {
@@ -75,7 +75,7 @@ export function createCrudController<T>(opts: CrudOptions<T>): CrudHandlers {
     const limit = Math.min(maxLimit, Math.max(1, Number(req.query.limit) || defaultLimit));
     const skip = (page - 1) * limit;
 
-    const filter = listFilter ? listFilter(req) : {};
+    const filter = listFilter ? await listFilter(req) : {};
 
     let query = model.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
     query = applyPopulate(query);

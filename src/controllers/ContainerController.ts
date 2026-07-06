@@ -21,10 +21,20 @@ export const containerCrud = createCrudController({
   populate: CONTAINER_POPULATE,
   localize: true,
   pagination: { defaultLimit: 20, maxLimit: 10000 },
-  listFilter: () => ({ isActive: true }),
+  listFilter: async (req) => {
+    if (req.isAdminRequest) return { isActive: true };
+    const containerIds = await Product.distinct("container");
+    return { isActive: true, _id: { $in: containerIds } };
+  },
   hooks: {
     afterList: async ({ docs }) => attachProducts(docs!),
-    afterGet: async ({ doc }) => (await attachProducts([doc!]))[0]!,
+    afterGet: async ({ req, doc }) => {
+      const result = (await attachProducts([doc!]))[0]!;
+      if (!req.isAdminRequest && (!result.products || result.products.length === 0)) {
+        throw new AppError("Container not found", 404);
+      }
+      return result;
+    },
     afterCreate: async ({ req, doc }) => {
       if (!doc) throw new AppError("Container not created", 500);
       const populated = await refetchContainer((doc as any)._id);
