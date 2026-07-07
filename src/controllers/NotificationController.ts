@@ -30,20 +30,15 @@ export const sendNotification = async (req: Request, res: Response) => {
   }
 
   let sent = 0;
-  let failed = 0;
 
   for (const user of users) {
-    try {
-      await sendPushNotification(user.expoPushToken!, title, body, data);
-      sent++;
-    } catch {
-      failed++;
-    }
+    const ok = await sendPushNotification(user.expoPushToken!, title, body, data);
+    if (ok) sent++;
   }
 
   return responder()
     .code(200)
     .message("Notification sent")
-    .payload({ sent, failed, total: users.length })
+    .payload({ sent, failed: users.length - sent, total: users.length })
     .send(res);
 };

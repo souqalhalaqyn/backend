@@ -8,9 +8,9 @@ export async function sendPushNotification(
   title: string,
   body: string,
   data?: Record<string, unknown>,
-) {
+): Promise<boolean> {
   if (!Expo.isExpoPushToken(expoPushToken)) {
-    return;
+    return false;
   }
 
   const message: ExpoPushMessage = {
@@ -24,9 +24,17 @@ export async function sendPushNotification(
   try {
     const chunks = expo.chunkPushNotifications([message]);
     for (const chunk of chunks) {
-      await expo.sendPushNotificationsAsync(chunk);
+      const tickets = await expo.sendPushNotificationsAsync(chunk);
+      for (const ticket of tickets) {
+        if (ticket.status === "error") {
+          console.error("Expo push error:", ticket.message);
+          return false;
+        }
+      }
     }
-  } catch {
-    // Non-critical: notification delivery failure should not crash the app
+    return true;
+  } catch (err) {
+    console.error("Expo push exception:", err);
+    return false;
   }
 }
