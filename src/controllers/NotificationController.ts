@@ -11,34 +11,39 @@ export const sendNotification = async (req: Request, res: Response) => {
     throw new AppError("title and body are required", 400);
   }
 
-  const filter: Record<string, unknown> = {
-    expoPushToken: { $ne: "", $exists: true },
-  };
+  const filter: Record<string, unknown> = {};
 
   if (Array.isArray(userIds) && userIds.length > 0) {
     filter._id = { $in: userIds };
+  } else {
+    filter.expoPushToken = { $ne: "", $exists: true };
   }
 
-  const users = await User.find(filter, { expoPushToken: 1 });
+  const users = await User.find(filter, { _id: 1, expoPushToken: 1 });
 
   if (users.length === 0) {
-    return responder().code(200).message("No users with push tokens found").send(res);
+    return responder()
+      .code(200)
+      .message("No users with push tokens found")
+      .payload({ total: 0, sent: 0, failed: 0 })
+      .send(res);
   }
 
-  const results = { sent: 0, failed: 0 };
+  let sent = 0;
+  let failed = 0;
 
-  await Promise.allSettled(
-    users.map((user) =>
-      sendPushNotification(user.expoPushToken!, title, body, data).then(
-        () => results.sent++,
-        () => results.failed++,
-      ),
-    ),
-  );
+  for (const user of users) {
+    try {
+      await sendPushNotification(user.expoPushToken!, title, body, data);
+      sent++;
+    } catch {
+      failed++;
+    }
+  }
 
   return responder()
     .code(200)
     .message("Notification sent")
-    .payload({ sent: results.sent, failed: results.failed, total: users.length })
+    .payload({ sent, failed, total: users.length })
     .send(res);
 };
