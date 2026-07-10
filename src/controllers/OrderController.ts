@@ -9,7 +9,7 @@ import Settings from "../models/Settings.js";
 import User from "../models/User.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
-import { sendPushNotification } from "../services/notification.js";
+import { sendPushNotification, notifyAdmins } from "../services/notification.js";
 
 export const placeOrder = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
@@ -150,6 +150,8 @@ export const placeOrder = async (req: Request, res: Response) => {
   } catch {
     // Non-critical: order succeeded, profit distribution can be reconciled manually
   }
+
+  notifyAdmins("New order", `${req.user?.phone ?? "A user"} placed an order`, { screen: "orders" });
 
   return responder().code(201).message("Order placed").payload(order).send(res);
 };

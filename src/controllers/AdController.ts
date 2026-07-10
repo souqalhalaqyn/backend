@@ -1,8 +1,11 @@
 import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
 import AdRequest from "../models/AdRequest.js";
+import User from "../models/User.js";
 import { responder } from "../utils/Responder.js";
 import { localize } from "../utils/localize.js";
+import { notifyAdmins } from "../services/notification.js";
+import Settings from "../models/Settings.js";
 
 export const createAdRequest = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
@@ -41,6 +44,8 @@ export const createAdRequest = async (req: Request, res: Response) => {
       descriptionAr: p.descriptionAr || "",
     })),
   });
+
+  notifyAdmins("New ad request", `${req.user?.phone ?? "A user"} submitted an ad request`, { screen: "ads" });
 
   return responder().code(201).message("Ad request created").payload(ad).send(res);
 };
@@ -121,13 +126,19 @@ export const getAllAdRequests = async (req: Request, res: Response) => {
 export const approveAdRequest = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
-  const ad = await AdRequest.findByIdAndUpdate(
-    req.params.id,
-    { status: "approved", reviewedBy: req.user.userId, reviewedAt: new Date() },
-    { new: true },
-  );
-
+  const ad = await AdRequest.findById(req.params.id);
   if (!ad) throw new AppError("Ad request not found", 404);
+
+  ad.status = "approved";
+  ad.reviewedBy = req.user.userId as any;
+  ad.reviewedAt = new Date();
+  await ad.save();
+
+  const settings = await Settings.findOne();
+  const adPrice = settings?.adPrice ?? 0;
+  if (adPrice > 0) {
+    await User.findByIdAndUpdate(ad.user, { $inc: { balance: -adPrice } });
+  }
 
   return responder().code(200).message("Ad request approved").payload(ad).send(res);
 };
@@ -145,7 +156,7 @@ export const rejectAdRequest = async (req: Request, res: Response) => {
     {
       status: "rejected",
       rejectionReason: rejectionReason.trim(),
-      reviewedBy: req.user.userId,
+      reviewedBy: req.user.userId as any,
       reviewedAt: new Date(),
     },
     { new: true },
@@ -154,4 +165,44 @@ export const rejectAdRequest = async (req: Request, res: Response) => {
   if (!ad) throw new AppError("Ad request not found", 404);
 
   return responder().code(200).message("Ad request rejected").payload(ad).send(res);
+};
+
+export const updateAdRequest = async (req: Request, res: Response) => {
+  if (!req.user) throw new AppError("Authentication required", 401);
+
+  const ad = await AdRequest.findById(req.params.id);
+  if (!ad) throw new AppError("Ad request not found", 404);
+  if (ad.status !== "approved") throw new AppError("Only approved ads can be edited", 400);
+
+  const { container, products } = req.body;
+
+  if (container) {
+    if (container.nameAr) ad.container.nameAr = container.nameAr;
+    if (container.nameEn != null) ad.container.nameEn = container.nameEn;
+    if (container.descriptionAr != null) ad.container.descriptionAr = container.descriptionAr;
+    if (container.descriptionEn != null) ad.container.descriptionEn = container.descriptionEn;
+  }
+
+  if (Array.isArray(products) && products.length > 0) {
+    const mapped = products.map((p: any) => ({
+      nameEn: p.nameEn ?? p.nameAr ?? "",
+      nameAr: p.nameAr ?? "",
+      price: Number(p.price) || 0,
+      stock: Number(p.stock) || 0,
+      images: p.images ?? [],
+      descriptionEn: p.descriptionEn ?? "",
+      descriptionAr: p.descriptionAr ?? "",
+      tagsEn: p.tagsEn ?? [],
+      tagsAr: p.tagsAr ?? [],
+      aliasesEn: p.aliasesEn ?? [],
+      aliasesAr: p.aliasesAr ?? [],
+      notesEn: p.notesEn ?? [],
+      notesAr: p.notesAr ?? [],
+    }));
+    ad.set("products", mapped);
+  }
+
+  await ad.save();
+
+  return responder().code(200).message("Ad request updated").payload(ad).send(res);
 };

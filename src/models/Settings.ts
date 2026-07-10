@@ -13,6 +13,11 @@ const SettingsSchema = new Schema(
       type: [{ image: String, productId: String }],
       default: [],
     },
+    adPrice: {
+      type: Number,
+      default: 0,
+      min: [0, "Ad price cannot be negative"],
+    },
   },
   { timestamps: true },
 );

@@ -5,6 +5,7 @@ import type {
   ExpoPushSuccessTicket,
   ExpoPushErrorReceipt,
 } from "expo-server-sdk";
+import User from "../models/User.js";
 
 const expo = new Expo();
 
@@ -67,5 +68,18 @@ export async function sendPushNotification(
   } catch (err) {
     console.error("Expo push exception:", err);
     return false;
+  }
+}
+
+export async function notifyAdmins(title: string, body: string, data?: Record<string, unknown>) {
+  try {
+    const admins = await User.find({ role: "admin", expoPushToken: { $ne: "", $exists: true } });
+    for (const admin of admins) {
+      if (admin.expoPushToken) {
+        sendPushNotification(admin.expoPushToken, title, body, data);
+      }
+    }
+  } catch {
+    // non-critical
   }
 }

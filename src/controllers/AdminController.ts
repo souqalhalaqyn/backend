@@ -99,10 +99,11 @@ export const updateSliderImage = async (req: Request, res: Response) => {
 export const getExchangeRate = async (_req: Request, res: Response) => {
   const settings = await Settings.findOne();
   const rate = settings?.sypExchangeRate ?? 15000;
+  const adPrice = settings?.adPrice ?? 0;
   return responder()
     .code(200)
     .message("Exchange rate fetched")
-    .payload({ rate })
+    .payload({ rate, adPrice })
     .send(res);
 };
 

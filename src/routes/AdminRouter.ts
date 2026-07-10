@@ -30,5 +30,6 @@ router.put("/users/:id/change-password", authenticate, requireAdmin, AdminContro
 router.get("/ads", authenticate, requireAdmin, AdController.getAllAdRequests);
 router.put("/ads/:id/approve", authenticate, requireAdmin, AdController.approveAdRequest);
 router.put("/ads/:id/reject", authenticate, requireAdmin, AdController.rejectAdRequest);
+router.put("/ads/:id", authenticate, requireAdmin, AdController.updateAdRequest);
 
 export default router;

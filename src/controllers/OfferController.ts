@@ -6,6 +6,7 @@ import Product from "../models/Product.js";
 import User from "../models/User.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
+import { notifyAdmins } from "../services/notification.js";
 
 // -- Public endpoints --
 
@@ -80,6 +81,8 @@ export const buyOffer = async (req: Request, res: Response) => {
     .populate("container", "nameEn nameAr descriptionEn descriptionAr")
     .populate("product", "nameEn nameAr images price stock")
     .lean();
+
+  notifyAdmins("Offer bought", `${req.user?.phone ?? "A user"} bought an offer`, { screen: "orders" });
 
   return responder()
     .code(200)

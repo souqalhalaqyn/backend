@@ -3,6 +3,7 @@ import { AppError } from "../errors/AppError.js";
 import ChargeRequest from "../models/ChargeRequest.js";
 import User from "../models/User.js";
 import { responder } from "../utils/Responder.js";
+import { notifyAdmins } from "../services/notification.js";
 
 // -- User endpoints --
 
@@ -31,6 +32,8 @@ export const createRequest = async (req: Request, res: Response) => {
     image,
     status: "pending",
   });
+
+  notifyAdmins("Charge request", `${req.user.phone ?? "A user"} requested a charge`, { screen: "orders" });
 
   return responder()
     .code(201)

@@ -17,7 +17,7 @@ import LocationRouter from "./LocationRouter.js";
 import OrderRouter from "./OrderRouter.js";
 import ProductRouter from "./ProductRouter.js";
 import SearchRouter from "./SearchRouter.js";
-import { authenticate, requireAdmin } from "../middleware/auth.js";
+import { authenticate } from "../middleware/auth.js";
 import AdRouter from "./AdRouter.js";
 import NotificationRouter from "./NotificationRouter.js";
 import { upload } from "../utils/upload.js";
@@ -53,7 +53,7 @@ router.use("/search", SearchRouter);
 router.get("/settings/slider", AdminController.getSliderImages);
 router.get("/settings/exchange-rate", AdminController.getExchangeRate);
 
-router.post("/upload", authenticate, requireAdmin, upload.array("images", 10), (req, res) => {
+router.post("/upload", authenticate, upload.array("images", 10), (req, res) => {
   const files = req.files as Express.Multer.File[] | undefined;
   if (!files || files.length === 0) throw new AppError("no images provided", 400);
   const filenames = files.map((f) => f.filename);
