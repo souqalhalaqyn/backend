@@ -38,6 +38,7 @@ const AdRequestSchema = new Schema({
   rejectionReason: { type: String, default: "" },
   reviewedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
   reviewedAt: { type: Date, default: null },
+  contactPhone: { type: String, default: "" },
 }, { timestamps: true });
 
 AdRequestSchema.index({ status: 1, createdAt: -1 });

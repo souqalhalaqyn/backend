@@ -57,6 +57,7 @@ const OrderSchema = new Schema(
     way: { type: Schema.Types.ObjectId, ref: "Way" },
     branch: { type: Schema.Types.ObjectId, ref: "Branch" },
     address: { type: String, default: "" },
+    phone: { type: String, default: "" },
   },
   { timestamps: true },
 );

@@ -43,6 +43,7 @@ export const createAdRequest = async (req: Request, res: Response) => {
       descriptionEn: p.descriptionEn || p.descriptionAr || "",
       descriptionAr: p.descriptionAr || "",
     })),
+    contactPhone: req.body.phone || "",
   });
 
   notifyAdmins("New ad request", `${req.user?.phone ?? "A user"} submitted an ad request`, { screen: "ads" });
@@ -205,4 +206,13 @@ export const updateAdRequest = async (req: Request, res: Response) => {
   await ad.save();
 
   return responder().code(200).message("Ad request updated").payload(ad).send(res);
+};
+
+export const deleteAd = async (req: Request, res: Response) => {
+  if (!req.user) throw new AppError("Authentication required", 401);
+
+  const ad = await AdRequest.findByIdAndDelete(req.params.id);
+  if (!ad) throw new AppError("Ad request not found", 404);
+
+  return responder().code(200).message("Ad request deleted").send(res);
 };
