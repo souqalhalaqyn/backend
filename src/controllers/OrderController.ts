@@ -5,6 +5,7 @@ import Offer from "../models/Offer.js";
 import OfferPurchase from "../models/OfferPurchase.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import Settings from "../models/Settings.js";
 import User from "../models/User.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
@@ -110,9 +111,13 @@ export const placeOrder = async (req: Request, res: Response) => {
     throw new AppError("Stock changed, please retry", 409);
   }
 
+  const settings = await Settings.findOne().lean();
+  const exchangeRate = settings?.sypExchangeRate ?? 15000;
+  const totalInSYP = Math.ceil(total * exchangeRate);
+
   const user = await User.findOneAndUpdate(
-    { _id: req.user.userId, balance: { $gte: total } },
-    { $inc: { balance: -total } },
+    { _id: req.user.userId, balance: { $gte: totalInSYP } },
+    { $inc: { balance: -totalInSYP } },
     { new: true },
   );
   if (!user) {
@@ -127,7 +132,7 @@ export const placeOrder = async (req: Request, res: Response) => {
   const order = await Order.create({
     user: req.user.userId,
     items: orderItems,
-    total,
+    total: totalInSYP,
     status: "pending",
     locationType: locationType || "direct",
     state: state || undefined,

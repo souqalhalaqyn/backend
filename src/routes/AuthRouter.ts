@@ -19,6 +19,7 @@ router.post("/refresh", authLimiter, AuthController.refresh);
 router.post("/logout", authenticate, AuthController.logout);
 router.post("/change-password", authenticate, AuthController.changeMyPassword);
 router.post("/register-push-token", authenticate, AuthController.registerPushToken);
+router.put("/name", authenticate, AuthController.updateName);
 
 // -- Locations --
 router.get("/locations", authenticate, AuthController.getLocations);

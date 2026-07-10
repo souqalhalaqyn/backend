@@ -326,3 +326,25 @@ export const setDefaultLocation = async (req: Request, res: Response) => {
     .payload(user)
     .send(res);
 };
+
+export const updateName = async (req: Request, res: Response) => {
+  if (!req.user) throw new AppError("Authentication required", 401);
+
+  const { name } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    throw new AppError("Name is required", 400);
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.userId,
+    { name: name.trim() },
+    { new: true, select: "-password -refreshTokenVersion" },
+  );
+  if (!user) throw new AppError("User not found", 404);
+
+  return responder()
+    .code(200)
+    .message("Name updated")
+    .payload({ name: user.name })
+    .send(res);
+};
