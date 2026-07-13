@@ -17,6 +17,7 @@ const OrderItemSchema = new Schema(
     nameEn: { type: String, required: true },
     nameAr: { type: String, required: true },
     price: { type: Number, required: true },
+    currency: { type: String, default: "usd" },
     quantity: { type: Number, required: true, min: 1 },
     image: { type: String, default: "" },
   },

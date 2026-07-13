@@ -23,7 +23,7 @@ export const containerCrud = createCrudController({
   pagination: { defaultLimit: 20, maxLimit: 10000 },
   listFilter: async (req) => {
     if (req.isAdminRequest) return { isActive: true };
-    const containerIds = await Product.distinct("container");
+    const containerIds = await Product.distinct("container", { isActive: true });
     return { isActive: true, _id: { $in: containerIds } };
   },
   hooks: {

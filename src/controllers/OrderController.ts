@@ -52,12 +52,16 @@ export const placeOrder = async (req: Request, res: Response) => {
     nameEn: string;
     nameAr: string;
     price: number;
+    currency: string;
     quantity: number;
     image: string;
   }
 
+  const settings = await Settings.findOne().lean();
+  const exchangeRate = settings?.sypExchangeRate ?? 15000;
+
   const orderItems: OrderItemInput[] = [];
-  let total = 0;
+  let totalInSYP = 0;
   const stockUpdates: Array<Promise<any>> = [];
 
   for (const item of items) {
@@ -74,7 +78,8 @@ export const placeOrder = async (req: Request, res: Response) => {
     const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
     if (!product) throw new AppError(`Product at index ${productIndex} not found`, 400);
 
-    total += product.price * quantity;
+    const lineTotal = product.price * quantity;
+    totalInSYP += product.currency === "syp" ? lineTotal : Math.ceil(lineTotal * exchangeRate);
   }
 
   // Check offer stock availability before any side effects
@@ -112,6 +117,7 @@ export const placeOrder = async (req: Request, res: Response) => {
       nameEn: product.nameEn,
       nameAr: product.nameAr,
       price: product.price,
+      currency: product.currency ?? "usd",
       quantity,
       image: product.images?.[0] ?? "",
     });
@@ -125,10 +131,6 @@ export const placeOrder = async (req: Request, res: Response) => {
   }
 
   await Promise.all(stockUpdates);
-
-  const settings = await Settings.findOne().lean();
-  const exchangeRate = settings?.sypExchangeRate ?? 15000;
-  const totalInSYP = Math.ceil(total * exchangeRate);
 
   const user = await User.findOneAndUpdate(
     { _id: req.user.userId, balance: { $gte: totalInSYP } },

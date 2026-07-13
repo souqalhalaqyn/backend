@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
+import Container from "../models/Container.js";
 import Offer from "../models/Offer.js";
 import OfferPurchase from "../models/OfferPurchase.js";
 import Product from "../models/Product.js";
@@ -219,6 +220,14 @@ export const update = async (req: Request, res: Response) => {
 export const remove = async (req: Request, res: Response) => {
   const offer = await Offer.findByIdAndDelete(req.params.id);
   if (!offer) throw new AppError("Offer not found", 404);
+
+  // Delete the container (cascades to its products via ContainerController.beforeRemove)
+  if (offer.container) {
+    await Container.findByIdAndDelete(offer.container);
+  }
+
+  // Delete associated purchase records
+  await OfferPurchase.deleteMany({ offer: offer._id });
 
   return responder()
     .code(200)
