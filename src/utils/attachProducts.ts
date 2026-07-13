@@ -1,8 +1,10 @@
 import Product from "../models/Product.js";
 
-export async function attachProducts(containers: any[], limit?: number) {
+export async function attachProducts(containers: any[], limit?: number, isAdminRequest = false) {
   const containerIds = containers.map((c) => c._id);
-  const products = await Product.find({ container: { $in: containerIds } })
+  const filter: Record<string, unknown> = { container: { $in: containerIds } };
+  if (!isAdminRequest) filter.isActive = true;
+  const products = await Product.find(filter)
     .sort({ productIndex: 1 })
     .lean();
   const productMap: Record<string, any[]> = {};

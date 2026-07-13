@@ -166,6 +166,8 @@ async function distributeOfferProfits(order: any, retailBuyerId: string) {
       status: "sold",
     }).sort({ createdAt: 1 });
 
+    if (offers.length === 0) continue;
+
     const totalAvailable = offers.reduce((sum, o) => sum + (o.totalQuantity - o.soldQuantity), 0);
     if (totalAvailable < quantity) {
       throw new AppError(`Insufficient offer stock for product: only ${totalAvailable} available`, 400);
@@ -346,34 +348,12 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     );
   }
 
-  if (status === "confirmed" && !force) {
-    const products = await Product.find({
-      _id: { $in: order.items.map((item) => item.product) },
-    }).lean();
-    const stockMap = new Map(products.map((p) => [p._id.toString(), p.stock]));
-    const stockWarnings: { nameEn: string; nameAr: string; quantity: number; stock: number }[] = [];
-
-    for (const item of order.items) {
-      const currentStock = stockMap.get(item.product.toString()) ?? 0;
-      if (item.quantity > currentStock) {
-        stockWarnings.push({ nameEn: item.nameEn, nameAr: item.nameAr, quantity: item.quantity, stock: currentStock });
-      }
-    }
-
-    if (stockWarnings.length > 0) {
-      return responder()
-        .code(200)
-        .message("Stock warning")
-        .payload(localize(order.toJSON(), req.lang, req))
-        .meta({ stockWarnings })
-        .send(res);
-    }
-  }
-
   const wasConfirmed = order.status !== "pending" && order.status !== "cancelled";
 
   if (status === "confirmed") {
     for (const item of order.items) {
+      if (item.currency === "syp") continue;
+
       const product = await Product.findOneAndUpdate(
         { _id: item.product, stock: { $gte: item.quantity } },
         { $inc: { stock: -item.quantity } },

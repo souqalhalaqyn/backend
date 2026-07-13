@@ -22,7 +22,9 @@ export const getAll = async (req: Request, res: Response) => {
   const categories = await Category.find().lean();
   const categoryIds = categories.map((c) => c._id);
 
-  const allContainers = await Container.find({ categories: { $in: categoryIds } })
+  const containerFilter: Record<string, unknown> = { categories: { $in: categoryIds } };
+  if (!req.isAdminRequest) containerFilter.isActive = true;
+  const allContainers = await Container.find(containerFilter)
     .populate("brand", "nameEn nameAr")
     .sort({ createdAt: -1 })
     .lean();
@@ -37,7 +39,9 @@ export const getAll = async (req: Request, res: Response) => {
   }
 
   const allContainerIds = allContainers.map((c) => c._id);
-  const allProducts = await Product.find({ container: { $in: allContainerIds } })
+  const productFilter: Record<string, unknown> = { container: { $in: allContainerIds } };
+  if (!req.isAdminRequest) productFilter.isActive = true;
+  const allProducts = await Product.find(productFilter)
     .sort({ productIndex: 1 })
     .lean();
 
@@ -67,7 +71,9 @@ export const getById = async (req: Request, res: Response) => {
   const category = await Category.findById(req.params.id);
   if (!category) throw new AppError("Category not found", 404);
 
-  const containers = await Container.find({ categories: category._id })
+  const containerFilter: Record<string, unknown> = { categories: category._id };
+  if (!req.isAdminRequest) containerFilter.isActive = true;
+  const containers = await Container.find(containerFilter)
     .populate("brand", "nameEn nameAr")
     .limit(LIMIT_PER_CATEGORY)
     .sort({ createdAt: -1 })
@@ -75,7 +81,7 @@ export const getById = async (req: Request, res: Response) => {
 
   const data = {
     ...category.toJSON(),
-    containers: await attachProducts(containers, 1),
+    containers: await attachProducts(containers, 1, req.isAdminRequest),
   };
 
   return responder()
@@ -91,17 +97,19 @@ export const getContainers = async (req: Request, res: Response) => {
   const skip = (page - 1) * limit;
   const categoryId = new mongoose.Types.ObjectId(req.params.id as string);
 
+  const containerFilter: Record<string, unknown> = { categories: categoryId };
+  if (!req.isAdminRequest) containerFilter.isActive = true;
   const [containers, total] = await Promise.all([
-    Container.find({ categories: categoryId })
+    Container.find(containerFilter)
       .populate("brand", "nameEn nameAr")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })
       .lean(),
-    Container.countDocuments({ categories: categoryId }),
+    Container.countDocuments(containerFilter),
   ]);
 
-  const data = await attachProducts(containers, 1);
+  const data = await attachProducts(containers, 1, req.isAdminRequest);
 
   return responder()
     .code(200)
