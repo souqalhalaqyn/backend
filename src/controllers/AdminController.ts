@@ -162,7 +162,7 @@ export const updateUserBalance = async (req: Request, res: Response) => {
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { $inc: { balance: amount } },
-    { new: true, select: "-refreshTokenVersion" },
+    { returnDocument: "after", select: "-refreshTokenVersion" },
   );
   if (!user) throw new AppError("User not found", 404);
   return responder()
@@ -176,7 +176,7 @@ export const blockUser = async (req: Request, res: Response) => {
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { isBlocked: true },
-    { new: true, select: "-password -refreshTokenVersion" },
+    { returnDocument: "after", select: "-password -refreshTokenVersion" },
   );
   if (!user) throw new AppError("User not found", 404);
   return responder()
@@ -190,7 +190,7 @@ export const unblockUser = async (req: Request, res: Response) => {
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { isBlocked: false },
-    { new: true, select: "-password -refreshTokenVersion" },
+    { returnDocument: "after", select: "-password -refreshTokenVersion" },
   );
   if (!user) throw new AppError("User not found", 404);
   return responder()
@@ -212,7 +212,7 @@ export const changeUserPassword = async (req: Request, res: Response) => {
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { password: hashed, mustChangePassword: true, refreshTokenVersion: 0 },
-    { new: true, select: "-password -refreshTokenVersion" },
+    { returnDocument: "after", select: "-password -refreshTokenVersion" },
   );
   if (!user) throw new AppError("User not found", 404);
   return responder()

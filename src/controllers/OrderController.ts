@@ -135,7 +135,7 @@ export const placeOrder = async (req: Request, res: Response) => {
   const user = await User.findOneAndUpdate(
     { _id: req.user.userId, balance: { $gte: totalInSYP } },
     { $inc: { balance: -totalInSYP } },
-    { new: true },
+    { returnDocument: "after" },
   );
   if (!user) {
     await Promise.all(

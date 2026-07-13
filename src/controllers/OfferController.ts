@@ -55,7 +55,7 @@ export const buyOffer = async (req: Request, res: Response) => {
   const updatedUser = await User.findOneAndUpdate(
     { _id: req.user.userId, balance: { $gte: offer.offerPrice } },
     { $inc: { balance: -offer.offerPrice } },
-    { new: true },
+    { returnDocument: "after" },
   );
   if (!updatedUser) throw new AppError("Insufficient balance", 400);
 
@@ -64,7 +64,7 @@ export const buyOffer = async (req: Request, res: Response) => {
     const product = await Product.findByIdAndUpdate(
       offer.product,
       { $inc: { stock: offer.totalQuantity }, isActive: true },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!product) throw new AppError("Product not found", 500);
 

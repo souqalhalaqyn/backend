@@ -160,7 +160,7 @@ export const rejectAdRequest = async (req: Request, res: Response) => {
       reviewedBy: req.user.userId as any,
       reviewedAt: new Date(),
     },
-    { new: true },
+    { returnDocument: "after" },
   );
 
   if (!ad) throw new AppError("Ad request not found", 404);

@@ -351,7 +351,7 @@ export const updateName = async (req: Request, res: Response) => {
   const user = await User.findByIdAndUpdate(
     req.user.userId,
     { name: name.trim() },
-    { new: true, select: "-password -refreshTokenVersion" },
+    { returnDocument: "after", select: "-password -refreshTokenVersion" },
   );
   if (!user) throw new AppError("User not found", 404);
 

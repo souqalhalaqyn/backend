@@ -25,7 +25,7 @@ export const addFunds = async (req: Request, res: Response) => {
   const user = await User.findOneAndUpdate(
     { phone },
     { $inc: { balance: amount } },
-    { new: true },
+    { returnDocument: "after" },
   );
   if (!user) throw new AppError("User not found", 404);
 
