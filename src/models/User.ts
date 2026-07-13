@@ -54,6 +54,10 @@ const UserSchema = new Schema(
       type: String,
       default: "",
     },
+    adminExpoPushToken: {
+      type: String,
+      default: "",
+    },
     isBlocked: {
       type: Boolean,
       default: false,

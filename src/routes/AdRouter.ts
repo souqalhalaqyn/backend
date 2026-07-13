@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as AdController from "../controllers/AdController.js";
-import { authenticate, requireAdmin } from "../middleware/auth.js";
+import { authenticate } from "../middleware/auth.js";
 
 const router = Router();
 

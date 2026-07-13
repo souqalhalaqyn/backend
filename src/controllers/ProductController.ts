@@ -13,7 +13,7 @@ export const productCrud = createCrudController({
   pagination: { defaultLimit: 20, maxLimit: 10000 },
   listFilter: (req) => {
     const filter: Record<string, unknown> = {};
-    const containerParam = (req.query.container as string) || (req.query.contianerId as string);
+    const containerParam = (req.query.container as string) || (req.query.containerId as string);
     if (containerParam && mongoose.Types.ObjectId.isValid(containerParam)) {
       filter.container = new mongoose.Types.ObjectId(containerParam);
     }

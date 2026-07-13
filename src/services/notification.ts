@@ -73,10 +73,10 @@ export async function sendPushNotification(
 
 export async function notifyAdmins(title: string, body: string, data?: Record<string, unknown>) {
   try {
-    const admins = await User.find({ role: "admin", expoPushToken: { $ne: "", $exists: true } });
+    const admins = await User.find({ role: "admin", adminExpoPushToken: { $ne: "", $exists: true } });
     for (const admin of admins) {
-      if (admin.expoPushToken) {
-        sendPushNotification(admin.expoPushToken, title, body, data);
+      if (admin.adminExpoPushToken) {
+        sendPushNotification(admin.adminExpoPushToken, title, body, data);
       }
     }
   } catch {
