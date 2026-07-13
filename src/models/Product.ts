@@ -24,8 +24,13 @@ const ProductSchema = new Schema(
     },
     price: {
       type: Number,
-      required: [true, "Price in USD is required"],
+      required: [true, "Price is required"],
       min: [0, "Price cannot be negative"],
+    },
+    currency: {
+      type: String,
+      enum: ["usd", "syp"],
+      default: "usd",
     },
     container: {
       type: Schema.Types.ObjectId,
