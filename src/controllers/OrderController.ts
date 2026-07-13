@@ -73,11 +73,38 @@ export const placeOrder = async (req: Request, res: Response) => {
     const containerProducts = productsByContainer[containerId] ?? [];
     const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
     if (!product) throw new AppError(`Product at index ${productIndex} not found`, 400);
-    if (product.stock < quantity) {
-      throw new AppError(`Insufficient stock for product`, 400);
-    }
 
     total += product.price * quantity;
+  }
+
+  // Check offer stock availability before any side effects
+  for (const item of items) {
+    const { containerId, productIndex, quantity } = item;
+    if (quantity < 1) continue;
+    const containerProducts = productsByContainer[containerId] ?? [];
+    const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
+    if (!product) continue;
+
+    const offers = await Offer.find({
+      product: product._id,
+      status: "sold",
+    }).sort({ createdAt: 1 });
+    const totalAvailable = offers.reduce((sum, o) => sum + (o.totalQuantity - o.soldQuantity), 0);
+    if (totalAvailable < quantity) {
+      throw new AppError("Insufficient offer stock for product", 400);
+    }
+  }
+
+  for (const item of items) {
+    const containerId: string = item.containerId;
+    const productIndex: number = item.productIndex;
+    const quantity: number = item.quantity;
+
+    const containerProducts = productsByContainer[containerId] ?? [];
+    const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
+    const container = containerMap.get(containerId);
+    if (!container || !product) throw new AppError("Item not found", 400);
+
     orderItems.push({
       container: container._id.toString(),
       product: product._id.toString(),
@@ -91,25 +118,13 @@ export const placeOrder = async (req: Request, res: Response) => {
 
     stockUpdates.push(
       Product.updateOne(
-        { _id: product._id, stock: { $gte: quantity } },
+        { _id: product._id },
         { $inc: { stock: -quantity } },
       ),
     );
   }
 
-  const results = await Promise.all(stockUpdates);
-  const allSucceeded = results.every((r) => r.modifiedCount === 1);
-  if (!allSucceeded) {
-    const toRestore = orderItems.filter((_, i) => results[i]?.modifiedCount === 1);
-    if (toRestore.length > 0) {
-      await Promise.all(
-        toRestore.map((oi) =>
-          Product.updateOne({ _id: oi.product }, { $inc: { stock: oi.quantity } }),
-        ),
-      );
-    }
-    throw new AppError("Stock changed, please retry", 409);
-  }
+  await Promise.all(stockUpdates);
 
   const settings = await Settings.findOne().lean();
   const exchangeRate = settings?.sypExchangeRate ?? 15000;
@@ -146,13 +161,9 @@ export const placeOrder = async (req: Request, res: Response) => {
   });
 
   // Distribute profit to offer buyers for each item
-  try {
-    await distributeOfferProfits(order, req.user.userId);
-  } catch {
-    // Non-critical: order succeeded, profit distribution can be reconciled manually
-  }
+  await distributeOfferProfits(order, req.user.userId);
 
-  notifyAdmins("New order", `${req.user?.phone ?? "A user"} placed an order`, { screen: "orders" });
+  notifyAdmins("طلب جديد", `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب`, { screen: "orders" });
 
   return responder().code(201).message("Order placed").payload(order).send(res);
 };
@@ -166,6 +177,11 @@ async function distributeOfferProfits(order: any, retailBuyerId: string) {
       product: productId,
       status: "sold",
     }).sort({ createdAt: 1 });
+
+    const totalAvailable = offers.reduce((sum, o) => sum + (o.totalQuantity - o.soldQuantity), 0);
+    if (totalAvailable < quantity) {
+      throw new AppError(`Insufficient offer stock for product`, 400);
+    }
 
     let remainingQty = quantity;
     for (const offer of offers) {
@@ -191,8 +207,8 @@ async function distributeOfferProfits(order: any, retailBuyerId: string) {
 
       const updatedOffer = await Offer.findById(offer._id);
       if (updatedOffer && updatedOffer.soldQuantity >= updatedOffer.totalQuantity) {
-        updatedOffer.status = "completed";
-        await updatedOffer.save();
+        await OfferPurchase.deleteMany({ offer: offer._id });
+        await Offer.findByIdAndDelete(offer._id);
       }
 
       await User.findByIdAndUpdate(offer.buyer, { $inc: { balance: totalBuyerProfit } });
@@ -399,10 +415,11 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
   User.findById(order.user).then((user) => {
     if (user?.expoPushToken) {
+      const isAr = user.lang === "ar";
       sendPushNotification(
         user.expoPushToken,
-        "Order status updated",
-        `Your order status has been changed to ${status}`,
+        isAr ? "تم تحديث حالة الطلب" : "Order status updated",
+        isAr ? `تم تغيير حالة طلبك إلى ${status}` : `Your order status has been changed to ${status}`,
         { orderId: order._id.toString(), status },
       );
     }

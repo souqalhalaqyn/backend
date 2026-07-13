@@ -62,6 +62,11 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    lang: {
+      type: String,
+      enum: ["ar", "en"],
+      default: "ar",
+    },
   },
   { timestamps: true },
 );
