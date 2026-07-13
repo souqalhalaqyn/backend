@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
+import ArchivedProduct from "../models/ArchivedProduct.js";
 import Container from "../models/Container.js";
 import Offer from "../models/Offer.js";
 import OfferPurchase from "../models/OfferPurchase.js";
@@ -62,7 +63,6 @@ export const placeOrder = async (req: Request, res: Response) => {
 
   const orderItems: OrderItemInput[] = [];
   let totalInSYP = 0;
-  const stockUpdates: Array<Promise<any>> = [];
 
   for (const item of items) {
     const containerId: string = item.containerId;
@@ -82,13 +82,13 @@ export const placeOrder = async (req: Request, res: Response) => {
     totalInSYP += product.currency === "syp" ? lineTotal : Math.ceil(lineTotal * exchangeRate);
   }
 
-  // Check offer stock availability before any side effects
+  // Check offer stock availability (only for offer products)
   for (const item of items) {
     const { containerId, productIndex, quantity } = item;
     if (quantity < 1) continue;
     const containerProducts = productsByContainer[containerId] ?? [];
     const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
-    if (!product) continue;
+    if (!product || product.currency === "usd") continue;
 
     const offers = await Offer.find({
       product: product._id,
@@ -96,7 +96,7 @@ export const placeOrder = async (req: Request, res: Response) => {
     }).sort({ createdAt: 1 });
     const totalAvailable = offers.reduce((sum, o) => sum + (o.totalQuantity - o.soldQuantity), 0);
     if (totalAvailable < quantity) {
-      throw new AppError("Insufficient offer stock for product", 400);
+      throw new AppError(`Insufficient offer stock for product: only ${totalAvailable} available`, 400);
     }
   }
 
@@ -121,16 +121,7 @@ export const placeOrder = async (req: Request, res: Response) => {
       quantity,
       image: product.images?.[0] ?? "",
     });
-
-    stockUpdates.push(
-      Product.updateOne(
-        { _id: product._id },
-        { $inc: { stock: -quantity } },
-      ),
-    );
   }
-
-  await Promise.all(stockUpdates);
 
   const user = await User.findOneAndUpdate(
     { _id: req.user.userId, balance: { $gte: totalInSYP } },
@@ -138,11 +129,6 @@ export const placeOrder = async (req: Request, res: Response) => {
     { returnDocument: "after" },
   );
   if (!user) {
-    await Promise.all(
-      orderItems.map((oi) =>
-        Product.updateOne({ _id: oi.product }, { $inc: { stock: oi.quantity } }),
-      ),
-    );
     throw new AppError("Insufficient balance", 400);
   }
 
@@ -182,7 +168,7 @@ async function distributeOfferProfits(order: any, retailBuyerId: string) {
 
     const totalAvailable = offers.reduce((sum, o) => sum + (o.totalQuantity - o.soldQuantity), 0);
     if (totalAvailable < quantity) {
-      throw new AppError(`Insufficient offer stock for product`, 400);
+      throw new AppError(`Insufficient offer stock for product: only ${totalAvailable} available`, 400);
     }
 
     let remainingQty = quantity;
@@ -277,18 +263,10 @@ export const cancelOrder = async (req: Request, res: Response) => {
     throw new AppError("Only pending orders can be cancelled", 400);
   }
 
-  await Promise.all([
-    ...order.items.map((item) =>
-      Product.updateOne(
-        { _id: item.product },
-        { $inc: { stock: item.quantity } },
-      ),
-    ),
-    User.updateOne(
-      { _id: req.user.userId },
-      { $inc: { balance: order.total } },
-    ),
-  ]);
+  await User.updateOne(
+    { _id: req.user.userId },
+    { $inc: { balance: order.total } },
+  );
 
   order.status = "cancelled";
   order.statusHistory.push({
@@ -392,19 +370,53 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
   }
 
+  const wasConfirmed = order.status !== "pending" && order.status !== "cancelled";
+
+  if (status === "confirmed") {
+    for (const item of order.items) {
+      const product = await Product.findOneAndUpdate(
+        { _id: item.product, stock: { $gte: item.quantity } },
+        { $inc: { stock: -item.quantity } },
+        { returnDocument: "after" },
+      );
+      if (!product) {
+        throw new AppError(`Insufficient stock for product "${item.nameEn || item.nameAr}"`, 400);
+      }
+      if (product.stock <= 0) {
+        await ArchivedProduct.create({
+          originalId: product._id,
+          nameEn: product.nameEn,
+          nameAr: product.nameAr,
+          descriptionEn: product.descriptionEn,
+          descriptionAr: product.descriptionAr,
+          price: product.price,
+          currency: product.currency,
+          container: product.container,
+          productIndex: product.productIndex,
+          images: product.images,
+          tagsEn: product.tagsEn,
+          tagsAr: product.tagsAr,
+          aliasesEn: product.aliasesEn,
+          aliasesAr: product.aliasesAr,
+          notesEn: product.notesEn,
+          notesAr: product.notesAr,
+          stock: 0,
+        });
+        await Product.findByIdAndDelete(product._id);
+      }
+    }
+  }
+
   if (status === "cancelled") {
-    await Promise.all([
-      ...order.items.map((item) =>
-        Product.updateOne(
-          { _id: item.product },
-          { $inc: { stock: item.quantity } },
-        ),
-      ),
-      User.updateOne(
-        { _id: order.user },
-        { $inc: { balance: order.total } },
-      ),
-    ]);
+    const ops: Promise<any>[] = [
+      User.updateOne({ _id: order.user }, { $inc: { balance: order.total } }),
+    ];
+    if (wasConfirmed) {
+      for (const item of order.items) {
+        ops.push(Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } }));
+      }
+    }
+    await Promise.all(ops);
   }
 
   order.status = status;
