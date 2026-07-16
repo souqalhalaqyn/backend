@@ -76,10 +76,10 @@ export async function notifyAdmins(title: string, body: string, data?: Record<st
     const admins = await User.find({ role: "admin", adminExpoPushToken: { $ne: "", $exists: true } });
     for (const admin of admins) {
       if (admin.adminExpoPushToken) {
-        sendPushNotification(admin.adminExpoPushToken, title, body, data);
+        await sendPushNotification(admin.adminExpoPushToken, title, body, data);
       }
     }
-  } catch {
-    // non-critical
+  } catch (err) {
+    console.error("notifyAdmins error:", err);
   }
 }
