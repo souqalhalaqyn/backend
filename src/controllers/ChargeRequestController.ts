@@ -33,7 +33,7 @@ export const createRequest = async (req: Request, res: Response) => {
     status: "pending",
   });
 
-  notifyAdmins("طلب شحن", `${req.user.phone ?? "مستخدم"} قام بطلب شحن`, { screen: "orders" });
+  notifyAdmins("طلب شحن", `${req.user.phone ?? "مستخدم"} قام بطلب شحن`, { screen: "chargeRequests", chargeRequestId: chargeRequest._id.toString() });
 
   return responder()
     .code(201)

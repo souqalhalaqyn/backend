@@ -83,7 +83,7 @@ export const buyOffer = async (req: Request, res: Response) => {
     .populate("product", "nameEn nameAr images price stock")
     .lean();
 
-  notifyAdmins("شراء عرض", `${req.user?.phone ?? "مستخدم"} قام بشراء عرض`, { screen: "orders" });
+  notifyAdmins("شراء عرض", `${req.user?.phone ?? "مستخدم"} قام بشراء عرض`, { screen: "offers", offerId: offer._id.toString() });
 
   return responder()
     .code(200)

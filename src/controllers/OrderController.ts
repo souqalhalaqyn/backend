@@ -152,7 +152,7 @@ export const placeOrder = async (req: Request, res: Response) => {
     throw err;
   }
 
-  notifyAdmins("طلب جديد", `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب`, { screen: "orders" });
+  notifyAdmins("طلب جديد", `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب`, { screen: "orders", orderId: order._id.toString() });
 
   return responder().code(201).message("Order placed").payload(order).send(res);
 };
