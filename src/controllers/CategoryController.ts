@@ -95,7 +95,9 @@ export const getContainers = async (req: Request, res: Response) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
   const skip = (page - 1) * limit;
-  const categoryId = new mongoose.Types.ObjectId(req.params.id as string);
+  const id = req.params.id;
+  if (typeof id !== "string" || !mongoose.Types.ObjectId.isValid(id)) throw new AppError("Invalid category ID", 400);
+  const categoryId = new mongoose.Types.ObjectId(id);
 
   const containerFilter: Record<string, unknown> = { categories: categoryId };
   if (!req.isAdminRequest) containerFilter.isActive = true;

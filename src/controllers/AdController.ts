@@ -52,8 +52,8 @@ export const createAdRequest = async (req: Request, res: Response) => {
 };
 
 export const getApprovedAds = async (req: Request, res: Response) => {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
   const [ads, total] = await Promise.all([
@@ -71,7 +71,7 @@ export const getApprovedAds = async (req: Request, res: Response) => {
     .code(200)
     .message("approved ads retrieved")
     .payload(localized)
-    .meta({ page, limit, total, pages: Math.ceil(total / limit) })
+    .meta({ page, limit, total, totalPages: Math.ceil(total / limit) })
     .send(res);
 };
 
@@ -96,8 +96,8 @@ export const getUserAdHistory = async (req: Request, res: Response) => {
 };
 
 export const getAllAdRequests = async (req: Request, res: Response) => {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
   const statusFilter = req.query.status as string;
@@ -120,7 +120,7 @@ export const getAllAdRequests = async (req: Request, res: Response) => {
     .code(200)
     .message("ad requests retrieved")
     .payload(ads)
-    .meta({ page, limit, total, pages: Math.ceil(total / limit) })
+    .meta({ page, limit, total, totalPages: Math.ceil(total / limit) })
     .send(res);
 };
 

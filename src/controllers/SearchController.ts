@@ -63,12 +63,10 @@ export const search = async (req: Request, res: Response) => {
     escaped,
   );
 
-  const [categories] = await Promise.all([
-    Category.find(
-      bilingualRegex(["nameEn", "nameAr"], escaped),
-      { _id: 1 },
-    ).lean(),
-  ]);
+  const categories = await Category.find(
+    bilingualRegex(["nameEn", "nameAr"], escaped),
+    { _id: 1 },
+  ).lean();
 
   const categoryIds = categories.map((c) => c._id.toString());
 

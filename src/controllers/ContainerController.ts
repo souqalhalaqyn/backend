@@ -29,7 +29,8 @@ export const containerCrud = createCrudController({
   hooks: {
     afterList: async ({ req, docs }) => attachProducts(docs!, undefined, req.isAdminRequest),
     afterGet: async ({ req, doc }) => {
-      const result = (await attachProducts([doc!], undefined, req.isAdminRequest))[0]!;
+      const attached = await attachProducts([doc!], undefined, req.isAdminRequest);
+      const result = attached[0] ?? doc!;
       if (!req.isAdminRequest && (!result.products || result.products.length === 0)) {
         throw new AppError("Container not found", 404);
       }

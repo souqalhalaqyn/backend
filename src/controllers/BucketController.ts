@@ -18,7 +18,7 @@ export const addFunds = async (req: Request, res: Response) => {
   if (!phone || typeof phone !== "string") {
     throw new AppError("Phone number is required", 400);
   }
-  if (!amount || typeof amount !== "number" || amount <= 0) {
+  if (!amount || typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
     throw new AppError("Valid positive amount is required", 400);
   }
 

@@ -82,33 +82,28 @@ export const placeOrder = async (req: Request, res: Response) => {
     totalInSYP += product.currency === "syp" ? lineTotal : Math.ceil(lineTotal * exchangeRate);
   }
 
-  // Check offer stock availability (only for offer products)
-  for (const item of items) {
-    const { containerId, productIndex, quantity } = item;
-    if (quantity < 1) continue;
-    const containerProducts = productsByContainer[containerId] ?? [];
-    const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
-    if (!product || product.currency === "usd") continue;
-
-    const offers = await Offer.find({
-      product: product._id,
-      status: "sold",
-    }).sort({ createdAt: 1 });
-    const totalAvailable = offers.reduce((sum, o) => sum + (o.totalQuantity - o.soldQuantity), 0);
-    if (totalAvailable < quantity) {
-      throw new AppError(`Insufficient offer stock for product: only ${totalAvailable} available`, 400);
-    }
-  }
-
   for (const item of items) {
     const containerId: string = item.containerId;
     const productIndex: number = item.productIndex;
     const quantity: number = item.quantity;
 
+    if (quantity < 1) throw new AppError("Invalid quantity", 400);
+
+    const container = containerMap.get(containerId);
+    if (!container) throw new AppError(`Container not found: ${containerId}`, 400);
+
     const containerProducts = productsByContainer[containerId] ?? [];
     const product = containerProducts.find((p) => p.productIndex === productIndex) as any;
-    const container = containerMap.get(containerId);
-    if (!container || !product) throw new AppError("Item not found", 400);
+    if (!product) throw new AppError(`Product at index ${productIndex} not found`, 400);
+
+    // Check offer stock (only for SYP/offer products)
+    if (product.currency !== "usd") {
+      const offers = await Offer.find({ product: product._id, status: "sold" }).sort({ createdAt: 1 });
+      const totalAvailable = offers.reduce((sum, o) => sum + (o.totalQuantity - o.soldQuantity), 0);
+      if (totalAvailable < quantity) {
+        throw new AppError(`Insufficient offer stock for product: only ${totalAvailable} available`, 400);
+      }
+    }
 
     orderItems.push({
       container: container._id.toString(),
@@ -132,24 +127,30 @@ export const placeOrder = async (req: Request, res: Response) => {
     throw new AppError("Insufficient balance", 400);
   }
 
-  const order = await Order.create({
-    user: req.user.userId,
-    items: orderItems,
-    total: totalInSYP,
-    status: "pending",
-    locationType: locationType || "direct",
-    state: state || undefined,
-    way: way || undefined,
-    branch: branch || undefined,
-    address: location || "",
-    phone: phone || "",
-    statusHistory: [
-      { status: "pending", changedBy: req.user.userId, changedAt: new Date() },
-    ],
-  });
+  let order;
+  try {
+    order = await Order.create({
+      user: req.user.userId,
+      items: orderItems,
+      total: totalInSYP,
+      status: "pending",
+      locationType: locationType || "direct",
+      state: state || undefined,
+      way: way || undefined,
+      branch: branch || undefined,
+      address: location || "",
+      phone: phone || "",
+      statusHistory: [
+        { status: "pending", changedBy: req.user.userId, changedAt: new Date() },
+      ],
+    });
 
-  // Distribute profit to offer buyers for each item
-  await distributeOfferProfits(order, req.user.userId);
+    await distributeOfferProfits(order, req.user.userId);
+  } catch (err) {
+    await User.updateOne({ _id: req.user.userId }, { $inc: { balance: totalInSYP } }).catch(() => {});
+    if (order?._id) await Order.findByIdAndDelete(order._id).catch(() => {});
+    throw err;
+  }
 
   notifyAdmins("طلب جديد", `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب`, { screen: "orders" });
 
@@ -315,7 +316,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
 export const updateOrderStatus = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
-  const { status, force } = req.body;
+  const { status } = req.body;
   const validStatuses = [
     "pending",
     "confirmed",
@@ -417,7 +418,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         { orderId: order._id.toString(), status },
       );
     }
-  });
+  }).catch(() => {});
 
   return responder()
     .code(200)

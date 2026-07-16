@@ -157,7 +157,9 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const updateUserBalance = async (req: Request, res: Response) => {
   const { amount } = req.body;
-  if (typeof amount !== "number") throw new AppError("Valid amount is required", 400);
+  if (typeof amount !== "number" || !Number.isFinite(amount)) {
+    throw new AppError("Valid amount is required", 400);
+  }
 
   const user = await User.findByIdAndUpdate(
     req.params.id,
