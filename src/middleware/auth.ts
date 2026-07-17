@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
 import { verifyAccessToken } from "../utils/jwt.js";
-import User from "../models/User.js";
 
 declare global {
   namespace Express {
@@ -16,7 +15,7 @@ declare global {
   }
 }
 
-export const authenticate = async (
+export const authenticate = (
   req: Request,
   _res: Response,
   next: NextFunction,
@@ -29,17 +28,6 @@ export const authenticate = async (
   const token = header.slice(7);
   try {
     const payload = verifyAccessToken(token);
-
-    // Verify token version matches current user version
-    if (payload.tokenVersion != null) {
-      const user = await User.findById(payload.userId)
-        .select("refreshTokenVersion")
-        .lean();
-      if (!user || (payload.tokenVersion ?? 0) < user.refreshTokenVersion) {
-        throw new AppError("Token has been revoked. Please login again.", 401);
-      }
-    }
-
     req.user = {
       userId: payload.userId,
       phone: payload.phone,
@@ -47,8 +35,7 @@ export const authenticate = async (
       name: payload.name,
     };
     next();
-  } catch (err) {
-    if (err instanceof AppError) throw err;
+  } catch {
     throw new AppError("Invalid or expired token", 401);
   }
 };

@@ -331,6 +331,15 @@ export const cancelOrder = async (req: Request, res: Response) => {
   });
   await order.save();
 
+  User.findById(order.user).then((user) => {
+    notifyAdmins(
+      "إلغاء طلب", "Order Cancelled",
+      `${user?.name ?? user?.phone ?? "مستخدم"} قام بإلغاء الطلب`,
+      `${user?.name ?? user?.phone ?? "User"} cancelled an order`,
+      { screen: "orders", orderId: order._id.toString() },
+    );
+  }).catch(() => {});
+
   return responder()
     .code(200)
     .message("Order cancelled")
@@ -459,6 +468,17 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     changedAt: new Date(),
   });
   await order.save();
+
+  if (status === "cancelled") {
+    User.findById(order.user).then((user) => {
+      notifyAdmins(
+        "إلغاء طلب", "Order Cancelled",
+        `${user?.name ?? user?.phone ?? "مستخدم"} تم إلغاء الطلب بواسطة المشرف`,
+        `${user?.name ?? user?.phone ?? "User"} order was cancelled by admin`,
+        { screen: "orders", orderId: order._id.toString() },
+      );
+    }).catch(() => {});
+  }
 
   User.findById(order.user).then((user) => {
     if (user?.expoPushToken) {
