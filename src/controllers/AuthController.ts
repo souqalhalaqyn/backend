@@ -37,6 +37,7 @@ export const signup = async (req: Request, res: Response) => {
     userId: user._id.toString(),
     phone: user.phone,
     role: user.role,
+    name: user.name || undefined,
     tokenVersion: user.refreshTokenVersion,
   };
   const accessToken = signAccessToken(payload);
@@ -66,10 +67,16 @@ export const login = async (req: Request, res: Response) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new AppError("Invalid phone or password", 401);
 
+  // Increment token version to revoke all other sessions
+  user.refreshTokenVersion += 1;
+  user.expoPushToken = "";
+  await user.save();
+
   const payload = {
     userId: user._id.toString(),
     phone: user.phone,
     role: user.role,
+    name: user.name || undefined,
     tokenVersion: user.refreshTokenVersion,
   };
   const accessToken = signAccessToken(payload);
@@ -109,6 +116,7 @@ export const refresh = async (req: Request, res: Response) => {
       userId: user._id.toString(),
       phone: user.phone,
       role: user.role,
+      name: user.name || undefined,
       tokenVersion: user.refreshTokenVersion,
     };
     const newAccessToken = signAccessToken(newPayload);

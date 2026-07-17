@@ -48,8 +48,8 @@ export const createAdRequest = async (req: Request, res: Response) => {
 
   notifyAdmins(
     "طلب إعلان جديد", "New Ad Request",
-    `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب إعلان`,
-    `${req.user?.phone ?? "User"} submitted an ad request`,
+    `${req.user?.name ?? req.user?.phone ?? "مستخدم"} قام بتقديم طلب إعلان`,
+    `${req.user?.name ?? req.user?.phone ?? "User"} submitted an ad request`,
     { screen: "ads", adId: ad._id.toString() },
   );
 

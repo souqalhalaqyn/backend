@@ -5,6 +5,7 @@ export interface TokenPayload {
   userId: string;
   phone: string;
   role: string;
+  name?: string;
   tokenVersion?: number;
 }
 

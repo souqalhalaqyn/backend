@@ -35,8 +35,8 @@ export const createRequest = async (req: Request, res: Response) => {
 
   notifyAdmins(
     "طلب شحن", "Charge Request",
-    `${req.user.phone ?? "مستخدم"} قام بطلب شحن`,
-    `${req.user.phone ?? "User"} submitted a charge request`,
+    `${req.user.name ?? req.user.phone ?? "مستخدم"} قام بطلب شحن`,
+    `${req.user.name ?? req.user.phone ?? "User"} submitted a charge request`,
     { screen: "chargeRequests", chargeRequestId: chargeRequest._id.toString() },
   );
 

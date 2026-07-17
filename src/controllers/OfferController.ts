@@ -85,8 +85,8 @@ export const buyOffer = async (req: Request, res: Response) => {
 
   notifyAdmins(
     "شراء عرض", "Offer Purchased",
-    `${req.user?.phone ?? "مستخدم"} قام بشراء عرض`,
-    `${req.user?.phone ?? "User"} purchased an offer`,
+    `${req.user?.name ?? req.user?.phone ?? "مستخدم"} قام بشراء عرض`,
+    `${req.user?.name ?? req.user?.phone ?? "User"} purchased an offer`,
     { screen: "offers", offerId: offer._id.toString() },
   );
 

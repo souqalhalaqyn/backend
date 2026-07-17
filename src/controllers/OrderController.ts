@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
+import ArchivedContainer from "../models/ArchivedContainer.js";
 import ArchivedProduct from "../models/ArchivedProduct.js";
 import Container from "../models/Container.js";
 import Offer from "../models/Offer.js";
@@ -15,7 +16,7 @@ import { sendPushNotification, notifyAdmins, translateStatus } from "../services
 export const placeOrder = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
 
-  const { items, location, state, way, branch, locationType, phone } = req.body;
+  const { items, location, state, way, branch, locationType, phone, name } = req.body;
   if (!items || !Array.isArray(items) || items.length === 0) {
     throw new AppError("Cart must contain at least one item", 400);
   }
@@ -142,6 +143,7 @@ export const placeOrder = async (req: Request, res: Response) => {
       branch: branch || undefined,
       address: location || "",
       phone: phone || "",
+      name: name || "",
       statusHistory: [
         { status: "pending", changedBy: req.user.userId, changedAt: new Date() },
       ],
@@ -156,8 +158,8 @@ export const placeOrder = async (req: Request, res: Response) => {
 
   notifyAdmins(
     "طلب جديد", "New Order",
-    `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب`,
-    `${req.user?.phone ?? "User"} placed an order`,
+    `${req.user?.name ?? req.user?.phone ?? "مستخدم"} قام بتقديم طلب`,
+    `${req.user?.name ?? req.user?.phone ?? "User"} placed an order`,
     { screen: "orders", orderId: order._id.toString() },
   );
 
@@ -207,6 +209,49 @@ async function distributeOfferProfits(order: any, retailBuyerId: string) {
       if (updatedOffer && updatedOffer.soldQuantity >= updatedOffer.totalQuantity) {
         await OfferPurchase.deleteMany({ offer: offer._id });
         await Offer.findByIdAndDelete(offer._id);
+
+        // Archive container + products when last offer for this product is consumed
+        const remainingOffers = await Offer.countDocuments({ product: productId, status: "sold" });
+        if (remainingOffers === 0) {
+          const containerDoc = await Container.findById(offer.container);
+          if (containerDoc) {
+            await ArchivedContainer.create({
+              originalId: containerDoc._id,
+              nameEn: containerDoc.nameEn,
+              nameAr: containerDoc.nameAr,
+              descriptionEn: containerDoc.descriptionEn,
+              descriptionAr: containerDoc.descriptionAr,
+              brand: containerDoc.brand,
+              categories: containerDoc.categories,
+            });
+
+            const containerProducts = await Product.find({ container: containerDoc._id });
+            for (const p of containerProducts) {
+              await ArchivedProduct.create({
+                originalId: p._id,
+                nameEn: p.nameEn,
+                nameAr: p.nameAr,
+                descriptionEn: p.descriptionEn,
+                descriptionAr: p.descriptionAr,
+                price: p.price,
+                currency: p.currency,
+                container: p.container,
+                productIndex: p.productIndex,
+                images: p.images,
+                tagsEn: p.tagsEn,
+                tagsAr: p.tagsAr,
+                aliasesEn: p.aliasesEn,
+                aliasesAr: p.aliasesAr,
+                notesEn: p.notesEn,
+                notesAr: p.notesAr,
+                stock: p.stock,
+              });
+              await Product.findByIdAndDelete(p._id);
+            }
+
+            await Container.findByIdAndDelete(containerDoc._id);
+          }
+        }
       }
 
       await User.findByIdAndUpdate(offer.buyer, { $inc: { balance: totalBuyerProfit } });

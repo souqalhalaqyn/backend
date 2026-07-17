@@ -60,6 +60,7 @@ const OrderSchema = new Schema(
     branch: { type: Schema.Types.ObjectId, ref: "Branch" },
     address: { type: String, default: "" },
     phone: { type: String, default: "" },
+    name: { type: String, default: "" },
   },
   { timestamps: true },
 );
