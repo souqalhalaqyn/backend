@@ -18,6 +18,14 @@ const WaySchema = new Schema(
       ref: "State",
       required: true,
     },
+    isDirectDelivery: {
+      type: Boolean,
+      default: false,
+    },
+    directDeliveryCharges: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );

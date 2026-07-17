@@ -9,6 +9,19 @@ import User from "../models/User.js";
 
 const expo = new Expo();
 
+const STATUS_TRANSLATIONS: Record<string, { en: string; ar: string }> = {
+  pending: { en: "Pending", ar: "قيد الانتظار" },
+  confirmed: { en: "Confirmed", ar: "مؤكد" },
+  processing: { en: "Processing", ar: "قيد المعالجة" },
+  shipped: { en: "Shipped", ar: "تم الشحن" },
+  delivered: { en: "Delivered", ar: "تم التوصيل" },
+  cancelled: { en: "Cancelled", ar: "ملغي" },
+};
+
+export function translateStatus(status: string, lang: "ar" | "en"): string {
+  return STATUS_TRANSLATIONS[status]?.[lang] ?? status;
+}
+
 export async function sendPushNotification(
   expoPushToken: string,
   title: string,
@@ -71,12 +84,25 @@ export async function sendPushNotification(
   }
 }
 
-export async function notifyAdmins(title: string, body: string, data?: Record<string, unknown>) {
+export async function notifyAdmins(
+  titleAr: string, titleEn: string,
+  bodyAr: string, bodyEn: string,
+  data?: Record<string, unknown>,
+) {
   try {
-    const admins = await User.find({ role: "admin", adminExpoPushToken: { $ne: "", $exists: true } });
+    const admins = await User.find(
+      { role: { $in: ["admin", "super_admin"] }, adminExpoPushToken: { $ne: "", $exists: true } },
+      { adminExpoPushToken: 1, lang: 1 },
+    );
     for (const admin of admins) {
       if (admin.adminExpoPushToken) {
-        await sendPushNotification(admin.adminExpoPushToken, title, body, data);
+        const isAr = (admin.lang ?? "ar") === "ar";
+        await sendPushNotification(
+          admin.adminExpoPushToken,
+          isAr ? titleAr : titleEn,
+          isAr ? bodyAr : bodyEn,
+          data,
+        );
       }
     }
   } catch (err) {

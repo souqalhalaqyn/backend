@@ -47,10 +47,13 @@ export const getLocationTree = async (req: Request, res: Response) => {
     nameEn: s.nameEn,
     nameAr: s.nameAr,
     isDirectDelivery: s.isDirectDelivery,
+    directDeliveryCharges: s.directDeliveryCharges ?? 0,
     ways: (waysByState[s._id.toString()] ?? []).map((w) => ({
       _id: w._id,
       nameEn: w.nameEn,
       nameAr: w.nameAr,
+      isDirectDelivery: w.isDirectDelivery,
+      directDeliveryCharges: w.directDeliveryCharges ?? 0,
       branches: (branchesByWay[w._id.toString()] ?? []).map((b) => ({
         _id: b._id,
         nameEn: b.nameEn,

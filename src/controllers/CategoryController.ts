@@ -19,7 +19,16 @@ export const categoryCrud = createCrudController({
 const LIMIT_PER_CATEGORY = 10;
 
 export const getAll = async (req: Request, res: Response) => {
-  const categories = await Category.find().lean();
+  const categoryFilter: Record<string, unknown> = {};
+  const q = (req.query.q as string)?.trim();
+  if (q) {
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    categoryFilter.$or = [
+      { nameEn: { $regex: escaped, $options: "i" } },
+      { nameAr: { $regex: escaped, $options: "i" } },
+    ];
+  }
+  const categories = await Category.find(categoryFilter).lean();
   const categoryIds = categories.map((c) => c._id);
 
   const containerFilter: Record<string, unknown> = { categories: { $in: categoryIds } };

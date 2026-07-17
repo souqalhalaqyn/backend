@@ -43,8 +43,19 @@ export const requireAdmin = (
   _res: Response,
   next: NextFunction,
 ) => {
-  if (!req.user || req.user.role !== "admin") {
+  if (!req.user || (req.user.role !== "admin" && req.user.role !== "super_admin")) {
     throw new AppError("Admin access required", 403);
+  }
+  next();
+};
+
+export const requireSuperAdmin = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  if (!req.user || req.user.role !== "super_admin") {
+    throw new AppError("Super admin access required", 403);
   }
   next();
 };

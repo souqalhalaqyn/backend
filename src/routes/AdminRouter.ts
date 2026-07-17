@@ -2,7 +2,7 @@ import { Router } from "express";
 import * as AdController from "../controllers/AdController.js";
 import * as AdminController from "../controllers/AdminController.js";
 import * as OrderController from "../controllers/OrderController.js";
-import { authenticate, requireAdmin } from "../middleware/auth.js";
+import { authenticate, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -26,6 +26,7 @@ router.put("/users/:id/balance", authenticate, requireAdmin, AdminController.upd
 router.put("/users/:id/block", authenticate, requireAdmin, AdminController.blockUser);
 router.put("/users/:id/unblock", authenticate, requireAdmin, AdminController.unblockUser);
 router.put("/users/:id/change-password", authenticate, requireAdmin, AdminController.changeUserPassword);
+router.put("/users/:id/role", authenticate, requireSuperAdmin, AdminController.updateUserRole);
 
 router.get("/ads", authenticate, requireAdmin, AdController.getAllAdRequests);
 router.put("/ads/:id/approve", authenticate, requireAdmin, AdController.approveAdRequest);

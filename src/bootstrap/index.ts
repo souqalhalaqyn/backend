@@ -20,8 +20,12 @@ export async function bootstrap() {
     await User.create({
       phone: ENV.ADMIN_PHONE,
       password: hashed,
-      role: "admin",
+      role: "super_admin",
     });
-    console.log(`[bootstrap] seeded admin user (${ENV.ADMIN_PHONE})`);
+    console.log(`[bootstrap] seeded super admin user (${ENV.ADMIN_PHONE})`);
+  } else if (adminUser.role !== "super_admin") {
+    adminUser.role = "super_admin";
+    await adminUser.save();
+    console.log(`[bootstrap] upgraded admin to super_admin (${ENV.ADMIN_PHONE})`);
   }
 }

@@ -18,6 +18,10 @@ const StateSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    directDeliveryCharges: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );

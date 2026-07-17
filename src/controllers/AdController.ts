@@ -46,7 +46,12 @@ export const createAdRequest = async (req: Request, res: Response) => {
     contactPhone: req.body.phone || "",
   });
 
-  notifyAdmins("طلب إعلان جديد", `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب إعلان`, { screen: "ads", adId: ad._id.toString() });
+  notifyAdmins(
+    "طلب إعلان جديد", "New Ad Request",
+    `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب إعلان`,
+    `${req.user?.phone ?? "User"} submitted an ad request`,
+    { screen: "ads", adId: ad._id.toString() },
+  );
 
   return responder().code(201).message("Ad request created").payload(ad).send(res);
 };

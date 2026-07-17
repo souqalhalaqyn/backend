@@ -202,6 +202,33 @@ export const unblockUser = async (req: Request, res: Response) => {
     .send(res);
 };
 
+export const updateUserRole = async (req: Request, res: Response) => {
+  const { role } = req.body;
+  if (!role || !["admin", "customer"].includes(role)) {
+    throw new AppError("Role must be 'admin' or 'customer'", 400);
+  }
+  if (req.user?.userId === req.params.id) {
+    throw new AppError("Cannot change your own role", 400);
+  }
+  const target = await User.findById(req.params.id);
+  if (!target) throw new AppError("User not found", 404);
+  if (target.role === "super_admin") {
+    throw new AppError("Cannot change super admin role", 400);
+  }
+
+  target.role = role;
+  if (role === "customer") {
+    target.adminExpoPushToken = "";
+  }
+  await target.save();
+
+  return responder()
+    .code(200)
+    .message("role updated")
+    .payload({ _id: target._id, phone: target.phone, role: target.role })
+    .send(res);
+};
+
 export const changeUserPassword = async (req: Request, res: Response) => {
   const { newPassword } = req.body;
   if (!newPassword || newPassword.length < 6) {

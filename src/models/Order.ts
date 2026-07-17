@@ -20,6 +20,7 @@ const OrderItemSchema = new Schema(
     currency: { type: String, default: "usd" },
     quantity: { type: Number, required: true, min: 1 },
     image: { type: String, default: "" },
+    color: { type: String, default: "" },
   },
   { _id: false },
 );

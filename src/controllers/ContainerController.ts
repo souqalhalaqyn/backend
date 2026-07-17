@@ -22,9 +22,20 @@ export const containerCrud = createCrudController({
   localize: true,
   pagination: { defaultLimit: 20, maxLimit: 10000 },
   listFilter: async (req) => {
-    if (req.isAdminRequest) return { isActive: true };
-    const containerIds = await Product.distinct("container", { isActive: true });
-    return { isActive: true, _id: { $in: containerIds } };
+    const filter: Record<string, unknown> = { isActive: true };
+    const q = (req.query.q as string)?.trim();
+    if (q) {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { nameEn: { $regex: escaped, $options: "i" } },
+        { nameAr: { $regex: escaped, $options: "i" } },
+      ];
+    }
+    if (!req.isAdminRequest) {
+      const containerIds = await Product.distinct("container", { isActive: true });
+      filter._id = { $in: containerIds };
+    }
+    return filter;
   },
   hooks: {
     afterList: async ({ req, docs }) => attachProducts(docs!, undefined, req.isAdminRequest),

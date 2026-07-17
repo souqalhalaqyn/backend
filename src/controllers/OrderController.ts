@@ -10,7 +10,7 @@ import Settings from "../models/Settings.js";
 import User from "../models/User.js";
 import { localize } from "../utils/localize.js";
 import { responder } from "../utils/Responder.js";
-import { sendPushNotification, notifyAdmins } from "../services/notification.js";
+import { sendPushNotification, notifyAdmins, translateStatus } from "../services/notification.js";
 
 export const placeOrder = async (req: Request, res: Response) => {
   if (!req.user) throw new AppError("Authentication required", 401);
@@ -56,6 +56,7 @@ export const placeOrder = async (req: Request, res: Response) => {
     currency: string;
     quantity: number;
     image: string;
+    color: string;
   }
 
   const settings = await Settings.findOne().lean();
@@ -115,6 +116,7 @@ export const placeOrder = async (req: Request, res: Response) => {
       currency: product.currency ?? "usd",
       quantity,
       image: product.images?.[0] ?? "",
+      color: item.color ?? "",
     });
   }
 
@@ -152,7 +154,12 @@ export const placeOrder = async (req: Request, res: Response) => {
     throw err;
   }
 
-  notifyAdmins("طلب جديد", `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب`, { screen: "orders", orderId: order._id.toString() });
+  notifyAdmins(
+    "طلب جديد", "New Order",
+    `${req.user?.phone ?? "مستخدم"} قام بتقديم طلب`,
+    `${req.user?.phone ?? "User"} placed an order`,
+    { screen: "orders", orderId: order._id.toString() },
+  );
 
   return responder().code(201).message("Order placed").payload(order).send(res);
 };
@@ -411,10 +418,11 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   User.findById(order.user).then((user) => {
     if (user?.expoPushToken) {
       const isAr = user.lang === "ar";
+      const statusLabel = translateStatus(status, isAr ? "ar" : "en");
       sendPushNotification(
         user.expoPushToken,
         isAr ? "تم تحديث حالة الطلب" : "Order status updated",
-        isAr ? `تم تغيير حالة طلبك إلى ${status}` : `Your order status has been changed to ${status}`,
+        isAr ? `تم تغيير حالة طلبك إلى ${statusLabel}` : `Your order status has been changed to ${statusLabel}`,
         { orderId: order._id.toString(), status },
       );
     }
