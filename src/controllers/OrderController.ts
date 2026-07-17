@@ -247,7 +247,7 @@ export const getOrderById = async (req: Request, res: Response) => {
     .populate("items.product", "nameEn nameAr images price");
   if (!order) throw new AppError("Order not found", 404);
 
-  if (order.user.toString() !== req.user.userId && req.user.role !== "admin") {
+  if (order.user.toString() !== req.user.userId && req.user.role !== "admin" && req.user.role !== "super_admin") {
     throw new AppError("Access denied", 403);
   }
 
