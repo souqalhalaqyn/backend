@@ -1,10 +1,10 @@
 {
   "admin": {
-    "version": "1.0.0",
-    "url": "https://expo.dev/accounts/souqalhalaqeen-organaization/projects/barbers-admin/builds/670d10a7-d356-4d82-be98-c7b952342517"
+    "version": "2.0.0",
+    "url": "https://expo.dev/accounts/souqalhalaqeen-organaization/projects/barbers-admin/builds/a7380344-2524-4e40-9608-eb81e29305ea"
   },
   "shop": {
-    "version": "1.0.0",
-    "url": "https://expo.dev/accounts/souqalhalaqeen-organaization/projects/souqalhalaqeen/builds/aa2f0daa-9045-490f-8d93-f634d68dae38"
+    "version": "2.0.0",
+    "url": "https://expo.dev/accounts/souqalhalaqeen-organaization/projects/souqalhalaqeen/builds/72435ab1-64dd-4db1-b865-1b890ff539bd"
   }
 }
