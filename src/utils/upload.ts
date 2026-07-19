@@ -16,9 +16,13 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowed = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+  const allowed = [
+    "image/jpeg", "image/png", "image/webp", "image/avif",
+    "video/mp4", "video/quicktime", "video/x-msvideo", "video/webm",
+    "video/3gpp", "video/x-matroska",
+  ];
   if (allowed.includes(file.mimetype)) cb(null, true);
-  else cb(new Error(`unsupported image type: ${file.mimetype}`));
+  else cb(new Error(`unsupported file type: ${file.mimetype}`));
 };
 
-export const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+export const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
