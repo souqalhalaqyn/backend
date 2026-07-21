@@ -166,6 +166,30 @@ export const placeOrder = async (req: Request, res: Response) => {
   return responder().code(201).message("Order placed").payload(order).send(res);
 };
 
+
+async function reverseOfferConsumption(orderId: string) {
+  const purchases = await OfferPurchase.find({ order: orderId }).populate("offer", "buyer");
+  if (purchases.length === 0) return;
+
+  const ops: Promise<any>[] = [];
+  for (const purchase of purchases) {
+    const offer = (purchase as any).offer as { buyer?: string; _id: string } | null;
+    if (offer?.buyer) {
+      ops.push(
+        User.updateOne({ _id: offer.buyer }, { $inc: { balance: -purchase.totalProfitAmount } }),
+      );
+    }
+    ops.push(
+      Offer.updateOne(
+        { _id: purchase.offer, soldQuantity: { $gte: purchase.quantity } },
+        { $inc: { soldQuantity: -purchase.quantity, totalProfitDistributed: -purchase.totalProfitAmount } },
+      ),
+    );
+    ops.push(OfferPurchase.findByIdAndDelete(purchase._id));
+  }
+  await Promise.all(ops);
+}
+
 async function distributeOfferProfits(order: any, retailBuyerId: string) {
   for (const item of order.items) {
     const productId = item.product;
@@ -207,11 +231,10 @@ async function distributeOfferProfits(order: any, retailBuyerId: string) {
 
       const updatedOffer = await Offer.findById(offer._id);
       if (updatedOffer && updatedOffer.soldQuantity >= updatedOffer.totalQuantity) {
-        await OfferPurchase.deleteMany({ offer: offer._id });
-        await Offer.findByIdAndDelete(offer._id);
+        await Offer.findByIdAndUpdate(offer._id, { status: "completed" });
 
         // Archive container + products when last offer for this product is consumed
-        const remainingOffers = await Offer.countDocuments({ product: productId, status: "sold" });
+        const remainingOffers = await Offer.countDocuments({ product: productId, status: { $in: ["sold", "completed"] } });
         if (remainingOffers === 0) {
           const containerDoc = await Container.findById(offer.container);
           if (containerDoc) {
@@ -322,6 +345,8 @@ export const cancelOrder = async (req: Request, res: Response) => {
     { _id: req.user.userId },
     { $inc: { balance: order.total } },
   );
+
+  await reverseOfferConsumption(order._id.toString()).catch(() => {});
 
   order.status = "cancelled";
   order.statusHistory.push({
@@ -455,9 +480,11 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     ];
     if (wasConfirmed) {
       for (const item of order.items) {
+        if (item.currency === "syp") continue;
         ops.push(Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } }));
       }
     }
+    ops.push(reverseOfferConsumption(order._id.toString()).catch(() => {}));
     await Promise.all(ops);
   }
 
